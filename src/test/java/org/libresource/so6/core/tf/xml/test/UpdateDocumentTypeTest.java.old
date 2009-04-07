@@ -1,0 +1,669 @@
+package fr.loria.ecoo.so6.engine.tf.xml.test;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
+
+import junit.framework.TestCase;
+
+import fr.loria.ecoo.so6.WsConnection;
+import fr.loria.ecoo.so6.engine.util.FileUtils;
+import fr.loria.ecoo.so6.test.util.TestUtil;
+
+/**
+ * @author tani
+ */
+public class UpdateDocumentTypeTest extends TestCase {
+
+	private String dir1;
+	private String dir2;
+	private String dir;
+
+	private WsConnection ws1;
+	private WsConnection ws2;
+
+	private String xmlFilePath1;
+	private String xmlFilePath2;
+
+	/**
+	 * Constructor for UpdateDocumentTypeTest.
+	 * @param arg0
+	 */
+	public UpdateDocumentTypeTest(String arg0) {
+		super(arg0);
+	}
+
+	protected void setUp() throws Exception {
+		dir = FileUtils.createTmpDir().getPath();
+		WsConnection[] ws = TestUtil.createWorkspace(dir, 2, true);
+
+		ws1 = ws[0];
+		ws2 = ws[1];
+		dir1 = ws1.getPath();
+		dir2 = ws2.getPath();
+
+		xmlFilePath1 = dir1 + "/test.xml";
+		xmlFilePath2 = dir2 + "/test.xml";
+
+		FileUtils.createXmlFile("root", xmlFilePath1);
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+	}
+
+	public void testInsertDocType() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.setDoctype(xmlFilePath1, "newPublic", "newSystem");
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testInsertDocTypeWithoutPublicIDA() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.setDoctype(xmlFilePath1, null, "newSystem");
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testRemoveDocType() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.setDoctype(xmlFilePath1, "testpublic", "testsystem");
+		XmlUtil2.insertNode(xmlFilePath1, "0:0", Node.ELEMENT_NODE, "elem0");
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.removeDocumentType(xmlFilePath1);
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testUpdateDocType() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.setDoctype(xmlFilePath1, "testpublic", "testsystem");
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.setDoctype(xmlFilePath1, "NEWtestpublic", "NEWtestsystem");
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testUpdateDocTypeWithInternalDeclaration() throws Exception {
+		ArrayList ent = new ArrayList();
+		ArrayList nent = new ArrayList();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+		DefaultDocumentType test = new DefaultDocumentType();
+
+		test.setName("root");
+		test.setPublicID("testpublic");
+		test.setSystemID("testsystem");
+		InternalEntityDecl ent1 = new InternalEntityDecl("name1", "value1");
+		InternalEntityDecl ent2 = new InternalEntityDecl("name2", "value2");
+		InternalEntityDecl ent3 = new InternalEntityDecl("name3", "value3");
+		ent.add(ent1);
+		ent.add(ent2);
+		ent.add(ent3);
+		test.setInternalDeclarations(ent);
+
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+		test.setName("newRoot");
+		test.setPublicID("NEWtestpublic");
+		test.setSystemID("NEWtestsystem");
+		InternalEntityDecl nent1 = new InternalEntityDecl("NEWname1", "NEWvalue1");
+		InternalEntityDecl nent2 = new InternalEntityDecl("NEWname2", "NEWvalue2");
+		InternalEntityDecl nent3 = new InternalEntityDecl("NEWname3", "NEWvalue3");
+
+		nent.add(nent1);
+		nent.add(nent2);
+		nent.add(nent3);
+		test.setInternalDeclarations(nent);
+
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testInsertDocTypeWithInternalDeclaration() throws Exception {
+		ArrayList ent = new ArrayList();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+		DefaultDocumentType test = new DefaultDocumentType();
+
+		test.setName("root");
+		test.setPublicID("testpublic");
+		test.setSystemID("testsystem");
+		InternalEntityDecl ent1 = new InternalEntityDecl("name1", "value1");
+		InternalEntityDecl ent2 = new InternalEntityDecl("name2", "value2");
+		InternalEntityDecl ent3 = new InternalEntityDecl("name3", "value3");
+		ent.add(ent1);
+		ent.add(ent2);
+		ent.add(ent3);
+		test.setInternalDeclarations(ent);
+
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testInsertDocTypeWithConflict() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.setDoctype(xmlFilePath1, "newPublic1", "newSystem1");
+		XmlUtil2.setDoctype(xmlFilePath2, "newPublic2", "newSystem2");
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		ws1.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testInsertDocTypeWithoutPublicIDWithConflict() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.setDoctype(xmlFilePath1, null, "newSystem1");
+		XmlUtil2.setDoctype(xmlFilePath2, null, "newSystem2");
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		ws1.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testInsertDocTypeWithInternalDeclarationWithConflict() throws Exception {
+		ArrayList ent1 = new ArrayList();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+		DefaultDocumentType test1 = new DefaultDocumentType();
+		DefaultDocumentType test2 = new DefaultDocumentType();
+
+		test1.setName("root");
+		test1.setPublicID("testpublic");
+		test1.setSystemID("testsystem");
+		InternalEntityDecl ent11 = new InternalEntityDecl("name11", "value11");
+		InternalEntityDecl ent12 = new InternalEntityDecl("name12", "value12");
+		InternalEntityDecl ent13 = new InternalEntityDecl("name13", "value13");
+		ent1.add(ent11);
+		ent1.add(ent12);
+		ent1.add(ent13);
+		test1.setInternalDeclarations(ent1);
+
+		ArrayList ent2 = new ArrayList();
+		test2.setName("root");
+		test2.setPublicID("testpublic");
+		test2.setSystemID("testsystem");
+		InternalEntityDecl ent21 = new InternalEntityDecl("name21", "value21");
+		InternalEntityDecl ent22 = new InternalEntityDecl("name22", "value22");
+		InternalEntityDecl ent23 = new InternalEntityDecl("name23", "value23");
+		ent2.add(ent21);
+		ent2.add(ent22);
+		ent2.add(ent23);
+		test1.setInternalDeclarations(ent2);
+
+		XmlUtil2.setDoctype(xmlFilePath1, test1);
+		XmlUtil2.setDoctype(xmlFilePath2, test2);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		ws1.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testDocTypeName() throws Exception {
+		// extract from XML test suite 
+		// xmlconf/sun/invalid/root.xml
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.insertNode(xmlFilePath1, "0", Node.COMMENT_NODE, "the name in the dtd must match the element type of the root element");
+		DefaultDocumentType test = new DefaultDocumentType("atributes", null, "../valid/sa.dtd");
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testInsertDocTypeWithElementA() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("foo", null, null);
+		ElementDecl ed1 = new ElementDecl("foo", "ANY");
+		ArrayList list = new ArrayList();
+		list.add(ed1);
+		test.setInternalDeclarations(list);
+		System.out.println(XmlUtil2.doctypeToString(test));
+
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testInsertDocTypeWithElementB() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		String c = "<?xml version=\"1.0\"?>\n<!DOCTYPE doc\n[\n<!ELEMENT doc ANY>\n<!ELEMENT\na ANY\n>\n<!ELEMENT c (#PCDATA)>\n]>\n\n<root/>\n";
+		File f = new File(xmlFilePath1);
+		FileOutputStream fos = new FileOutputStream(f);
+		byte[] buffer = c.getBytes();
+		fos.write(buffer);
+		fos.flush();
+		fos.close();
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		String delta = dir + "/delta.xml";
+		assertTrue(dir, FileUtils.compareXmlFile(xmlFilePath1, xmlFilePath2, delta));
+	}
+
+	public void testInsertDocTypeWithElementC() throws Exception {
+		// Path of the file in the XML test suite
+		// xmlconf/ibm/valid/P27/ibm27v01.xml
+
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		String c = "<?xml version='1.0' ?>\n<!DOCTYPE doc [\n<!ELEMENT doc EMPTY>\n]>\n<root/>\n<!-- This is a comment in Misc -->";
+		File f = new File(xmlFilePath1);
+		FileOutputStream fos = new FileOutputStream(f);
+		byte[] buffer = c.getBytes();
+		fos.write(buffer);
+		fos.flush();
+		fos.close();
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		String delta = dir + "/delta.xml";
+		assertTrue(dir, FileUtils.compareXmlFile(xmlFilePath1, xmlFilePath2, delta));
+	}
+
+	public void testInsertDocTypeWithElementD() throws Exception {
+		// Path of the file in the XML test suite
+		// xmlconf/ibm/valid/P27/ibm27v03.xml
+
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		String c = "<?xml version='1.0' ?>\n<!DOCTYPE doc [\n<!ELEMENT doc ANY>\n]>\n<root>S is in the following Misc</root>\n";
+		File f = new File(xmlFilePath1);
+		FileOutputStream fos = new FileOutputStream(f);
+		byte[] buffer = c.getBytes();
+		fos.write(buffer);
+		fos.flush();
+		fos.close();
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		String delta = dir + "/delta.xml";
+		assertTrue(dir, FileUtils.compareXmlFile(xmlFilePath1, xmlFilePath2, delta));
+	}
+
+	public void testInsertDocTypeWithAttributeDeclarationA() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("root", "test.dtd");
+
+		AttributeDecl attr1 = new AttributeDecl("doc", "a1", "CDATA", null, "v1");
+		AttributeDecl attr2 = new AttributeDecl("doc", "a2", "CDATA", null, "v2");
+		AttributeDecl attr3 = new AttributeDecl("doc", "a3", "CDATA", null, "v3");
+
+		ArrayList list = new ArrayList();
+		list.add(attr1);
+		list.add(attr2);
+		list.add(attr3);
+
+		test.setInternalDeclarations(list);
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testInsertDocTypeWithAttributeDeclarationB() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("root", "test.dtd");
+
+		AttributeDecl attr1 = new AttributeDecl("doc", "a1", "CDATA", "#FIXED", "v1");
+		AttributeDecl attr2 = new AttributeDecl("doc", "a2", "CDATA", "#FIXED", "v2");
+		AttributeDecl attr3 = new AttributeDecl("doc", "a3", "CDATA", "#FIXED", "v3");
+
+		ArrayList list = new ArrayList();
+		list.add(attr1);
+		list.add(attr2);
+		list.add(attr3);
+
+		test.setInternalDeclarations(list);
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testUpdateDocTypeWithElementDecl() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("doc", "test.dtd");
+
+		ElementDecl ed1 = new ElementDecl("a", "ANY");
+		ElementDecl ed2 = new ElementDecl("b", "ANY");
+		ElementDecl ed3 = new ElementDecl("c", "ANY");
+
+		ArrayList list = new ArrayList();
+		list.add(ed1);
+		list.add(ed2);
+		list.add(ed3);
+
+		test.setInternalDeclarations(list);
+		System.out.println(XmlUtil2.doctypeToString(test));
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+		XmlUtil2.renameRoot(xmlFilePath1, "doc");
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+		/*
+		 * Extract from the web site W3C
+		 * XML Specification
+		 * 
+		 * 	<!ELEMENT br EMPTY>
+		 *  <!ELEMENT p (#PCDATA|emph)* >
+		 *  <!ELEMENT %name.para; %content.para; >
+		 *  <!ELEMENT container ANY>
+		 */
+		list.removeAll(list);
+
+		ElementDecl ed4 = new ElementDecl("br", "EMPTY");
+		ElementDecl ed5 = new ElementDecl("p", "(#PCDATA|emp)*");
+		//ElementDecl ed6 = new ElementDecl("%name.para;", "%content.para;");
+		ElementDecl ed7 = new ElementDecl("container", "ANY");
+
+		list.add(ed4);
+		list.add(ed5);
+		//list.add(ed6);
+		list.add(ed7);
+
+		test.setInternalDeclarations(list);
+
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testInsertDocTypeWithEntityAndElement() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("root", "test.dtd");
+
+		InternalEntityDecl ied1 = new InternalEntityDecl("name", "value");
+		ElementDecl ed1 = new ElementDecl("container", "ANY");
+
+		ArrayList list = new ArrayList();
+
+		list.add(ied1);
+		list.add(ed1);
+
+		test.setInternalDeclarations(list);
+
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testRemoveDocTypeWithInternelDeclaration() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("root", "test.dtd");
+
+		/*
+		 * <!ENTITY Pub-Status "This is a pre-release of the
+		 * specification.">
+		 */
+		InternalEntityDecl ied = new InternalEntityDecl("Pub-Status", "This is a pre-release of the specification");
+		ArrayList list = new ArrayList();
+		list.add(ied);
+
+		test.setInternalDeclarations(list);
+
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.removeDocumentType(xmlFilePath1);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testUpdateDocTypeWithAttribute() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("root", "test.dtd");
+
+		AttributeDecl attr1 = new AttributeDecl("doc", "a1", "CDATA", null, "v1");
+		AttributeDecl attr2 = new AttributeDecl("doc", "a2", "CDATA", null, "v2");
+		AttributeDecl attr3 = new AttributeDecl("doc", "a3", "CDATA", null, "v3");
+
+		ArrayList list = new ArrayList();
+		list.add(attr1);
+		list.add(attr2);
+		list.add(attr3);
+
+		test.setInternalDeclarations(list);
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+		AttributeDecl attr4 = new AttributeDecl("doc", "a4", "CDATA", null, "v4");
+		AttributeDecl attr5 = new AttributeDecl("doc", "a5", "CDATA", null, "v5");
+		AttributeDecl attr6 = new AttributeDecl("doc", "a6", "CDATA", null, "v6");
+
+		list.removeAll(list);
+		list.add(attr4);
+		list.add(attr5);
+		list.add(attr6);
+
+		test.setInternalDeclarations(list);
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testRemoveDocTypeWithElementDecl() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("root", "test.dtd");
+
+		/*
+		 * <!ENTITY Pub-Status "This is a pre-release of the
+		 * specification.">
+		 */
+		ElementDecl ed = new ElementDecl("container", "ANY");
+		ArrayList list = new ArrayList();
+		list.add(ed);
+
+		test.setInternalDeclarations(list);
+
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		XmlUtil2.removeDocumentType(xmlFilePath1);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testRemoveDocTypeWithAttribute() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("root", "test.dtd");
+
+		AttributeDecl attr1 = new AttributeDecl("doc", "a1", "CDATA", null, "v1");
+		AttributeDecl attr2 = new AttributeDecl("doc", "a2", "CDATA", null, "v2");
+		AttributeDecl attr3 = new AttributeDecl("doc", "a3", "CDATA", null, "v3");
+
+		ArrayList list = new ArrayList();
+		list.add(attr1);
+		list.add(attr2);
+		list.add(attr3);
+
+		test.setInternalDeclarations(list);
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+		XmlUtil2.removeDocumentType(xmlFilePath1);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void kotestFileA() throws Exception {
+		String path = "c:/tmp/test6.xml";
+		File f = new File(path);
+		FileInputStream fis = new FileInputStream(f);
+		int size = fis.available();
+		byte[] buffer = new byte[size];
+		fis.read(buffer);
+
+		FileOutputStream fos = new FileOutputStream(xmlFilePath1);
+		fos.write(buffer);
+
+		fis.close();
+		fos.flush();
+		fos.close();
+
+		/*
+		
+		System.out.println("-------------------------------------------------------------------");
+		Document d = XmlUtil2.getDocument(xmlFilePath1);
+		
+		Element root = d.getRootElement();
+		
+		int s = root.nodeCount();
+		System.out.println("s " + s);
+		
+		System.out.println(d.asXML());
+		
+		Node n = root.node(0);
+		System.out.println(n.asXML());
+		System.out.println(n.getNodeTypeName() + " class " + n.getClass());
+		*/
+
+		//System.out.println("name " + n.getName());
+		//System.out.println("text " + n.getText());
+
+		//Node pr = root.node(2);
+		//System.out.println(pr);
+
+		//System.out.println(d.nodeCount());
+
+		//XmlUtil2.save(d, xmlFilePath1 + ".bak.xml");
+		//String delta = dir1 + "/delta.xml";
+		//
+		//boolean b = FileUtils.compareXmlFile(xmlFilePath1, xmlFilePath1 + ".bak.xml", delta);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		String delta = dir + "/delta.xml";
+		boolean b = FileUtils.compareXmlFile(xmlFilePath1, xmlFilePath2, delta);
+		assertTrue(dir, b);
+
+	}
+
+	public void testInsertDocTypeWithExternalEntity() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("doc", null);
+
+		ElementDecl elemDecl = new ElementDecl("doc", "(#PCDATA)");
+		ExternalEntityDecl eed = new ExternalEntityDecl("e", null, "002.ent");
+
+		ArrayList list = new ArrayList();
+		list.add(elemDecl);
+		list.add(eed);
+
+		test.setInternalDeclarations(list);
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+		XmlUtil2.renameRoot(xmlFilePath1, "doc");
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+	}
+
+	public void testRemoveDocTypeWithExternalEntity() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("doc", null);
+
+		ElementDecl elemDecl = new ElementDecl("doc", "(#PCDATA)");
+		ExternalEntityDecl eed = new ExternalEntityDecl("e", null, "002.ent");
+
+		ArrayList list = new ArrayList();
+		list.add(elemDecl);
+		list.add(eed);
+
+		test.setInternalDeclarations(list);
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+		XmlUtil2.renameRoot(xmlFilePath1, "doc");
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+		XmlUtil2.removeDocumentType(xmlFilePath1);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+	}
+
+	public void testUpdateDocTypeWithExternalEntity() throws Exception {
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+		DefaultDocumentType test = new DefaultDocumentType("doc", null);
+
+		ElementDecl elemDecl = new ElementDecl("doc", "(#PCDATA)*");
+		ExternalEntityDecl eed = new ExternalEntityDecl("e", null, "002.ent");
+
+		ArrayList list = new ArrayList();
+		list.add(elemDecl);
+		list.add(eed);
+
+		test.setInternalDeclarations(list);
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+		XmlUtil2.renameRoot(xmlFilePath1, "doc");
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+
+		ExternalEntityDecl need = new ExternalEntityDecl("f", null, "test.ent");
+
+		list.removeAll(list);
+		list.add(elemDecl);
+		list.add(need);
+		test.setInternalDeclarations(list);
+
+		XmlUtil2.setDoctype(xmlFilePath1, test);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+		assertTrue(dir, FileUtils.compareDir(dir1, dir2));
+	}
+
+	protected void tearDown() {
+		System.out.println(dir);
+	}
+}

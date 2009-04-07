@@ -1,0 +1,33 @@
+package org.libresource.so6.core.exec.test;
+
+import java.util.Properties;
+
+import javax.swing.JFrame;
+
+public class Main {
+    public static void main(String[] args) {
+        // 5 * 5 * 3 * 3
+        So6Node root = new WorkspaceNode("", new Properties());
+        So6Node level_1, level_2, level_3, level_4;
+        for (int a = 0; a < 5; a++) {
+            level_1 = new WorkspaceNode("", new Properties());
+            root.addNode(level_1);
+            for (int b = 0; b < 5; b++) {
+                level_2 = new WorkspaceNode("", new Properties());
+                level_1.addNode(level_2);
+                for (int c = 0; c < 3; c++) {
+                    level_3 = new WorkspaceNode("", new Properties());
+                    level_2.addNode(level_3);
+                    for (int d = 0; d < 3; d++) {
+                        level_4 = new WorkspaceNode("", new Properties());
+                        level_3.addNode(level_4);
+                    }
+                }
+            }
+        }
+        // draw
+        JFrame f = new JFrame("Case");
+        f.getContentPane().add(new So6NetworkModel(root).getView());
+        f.setVisible(true);
+    }
+}

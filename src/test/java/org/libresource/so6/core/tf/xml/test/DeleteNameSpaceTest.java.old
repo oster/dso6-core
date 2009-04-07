@@ -1,0 +1,146 @@
+package fr.loria.ecoo.so6.engine.tf.xml.test;
+
+import junit.framework.TestCase;
+
+import org.dom4j.Document;
+import org.dom4j.Element;
+import org.dom4j.Namespace;
+import org.dom4j.tree.DefaultElement;
+import org.dom4j.tree.DefaultNamespace;
+
+import xml.util.XmlUtil2;
+import fr.loria.ecoo.so6.WsConnection;
+import fr.loria.ecoo.so6.engine.util.FileUtils;
+import fr.loria.ecoo.so6.test.util.TestUtil;
+
+/**
+ * @author tani
+ */
+public class DeleteNameSpaceTest extends TestCase {
+
+	private String delta;
+	private String dir;
+
+	private String dir1;
+	private String dir2;
+
+	private WsConnection ws1;
+	private WsConnection ws2;
+
+	private String xmlFilePath1;
+	private String xmlFilePath2;
+
+	/**
+	 * Constructor for DeleteNameSpaceTest.
+	 * @param arg0
+	 */
+	public DeleteNameSpaceTest(String arg0) {
+		super(arg0);
+	}
+
+	protected void setUp() throws Exception {
+		dir  = FileUtils.createTmpDir().getPath();
+		WsConnection[] ws = TestUtil.createWorkspace(dir, 2);
+
+		ws1 = ws[0];
+		ws2 = ws[1];
+		dir1 = ws1.getPath();
+		dir2 = ws2.getPath();
+
+		xmlFilePath1 = dir1 + "/test.xml";
+		xmlFilePath2 = dir2 + "/test.xml";
+
+		delta = dir + "/delta.xml";
+
+		FileUtils.createXmlFile("root", xmlFilePath1);
+		//XmlUtil2.insertNode(xmlFilePath1,"0:0",Node.ELEMENT_NODE,"libresource");
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+	}
+
+	protected void tearDown() throws Exception {
+		System.out.println(dir);
+	}
+
+	public void testDeleteNamespace() throws Exception {
+		assertTrue("The dir1 <> dir2", FileUtils.compareDir(dir1, dir2));
+
+		DefaultElement a = new DefaultElement("a");
+		DefaultNamespace ns = new DefaultNamespace("example", "http://example.org/namespace");
+		a.add(ns);
+		XmlUtil2.insertNode(xmlFilePath1, "0:0", a);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+
+		assertTrue("The dir1 <> dir2", FileUtils.compareDir(dir1, dir2));
+
+		Document doc = XmlUtil2.getDocument(xmlFilePath1);
+		Element e = (Element) XmlUtil2.getNode(doc, "0:0");
+		Namespace n = (Namespace) e.node(0);
+		e.remove(n);
+		XmlUtil2.save(doc, xmlFilePath1);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+
+		assertTrue("The dir1 <> dir2", FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testDeleteNamespaceWithItsParent() throws Exception {
+		assertTrue("The dir1 <> dir2", FileUtils.compareDir(dir1, dir2));
+
+		DefaultElement a = new DefaultElement("a");
+		DefaultElement ab = new DefaultElement("ab");
+		DefaultNamespace ns = new DefaultNamespace("example", "http://example.org/namespace");
+		a.add(ns);
+		a.add(ab);
+		XmlUtil2.insertNode(xmlFilePath1, "0:0", a);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+
+		assertTrue("The dir1 <> dir2", FileUtils.compareDir(dir1, dir2));
+
+		Document doc = XmlUtil2.getDocument(xmlFilePath1);
+		Element root = doc.getRootElement();
+		Element child = (Element) root.node(0);
+		root.remove(child);
+		XmlUtil2.save(doc, xmlFilePath1);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+
+		assertTrue("The dir1 <> dir2", FileUtils.compareDir(dir1, dir2));
+	}
+
+	public void testUpdateNamespace() throws Exception {
+		assertTrue("The dir1 <> dir2", FileUtils.compareDir(dir1, dir2));
+		Document doc = XmlUtil2.getDocument(xmlFilePath1);
+		DefaultNamespace ns = new DefaultNamespace("example", "http://example.org");
+		Element root = doc.getRootElement();
+		root.add(ns);
+
+		XmlUtil2.save(doc, xmlFilePath1);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+
+		assertTrue("The dir1 <> dir2", FileUtils.compareDir(dir1, dir2));
+
+		Document d = XmlUtil2.getDocument(xmlFilePath1);
+		Element r = d.getRootElement();
+		Namespace n = (Namespace) r.node(0);
+
+		r.remove(n);
+		DefaultNamespace ns2 = new DefaultNamespace("test", "http://test.org/namespace");
+		r.add(ns2);
+		XmlUtil2.save(d, xmlFilePath1);
+
+		ws1.updateAndCommit();
+		ws2.updateAndCommit();
+
+		assertTrue("The dir1 <> dir2", FileUtils.compareDir(dir1, dir2));
+	}
+}

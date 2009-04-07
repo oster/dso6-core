@@ -1,0 +1,735 @@
+package fr.loria.ecoo.so6.engine.util;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import org.dom4j.Document;
+import org.dom4j.Element;
+import org.dom4j.Node;
+import org.dom4j.dtd.AttributeDecl;
+import org.dom4j.dtd.ElementDecl;
+import org.dom4j.dtd.ExternalEntityDecl;
+import org.dom4j.dtd.InternalEntityDecl;
+
+import xml.util.XmlUtil2;
+import fr.loria.ecoo.so6.WsConnection;
+import fr.loria.ecoo.so6.command.xml.DeleteAttribute;
+import fr.loria.ecoo.so6.command.xml.DeleteNode;
+import fr.loria.ecoo.so6.command.xml.InsertAttribute;
+import fr.loria.ecoo.so6.command.xml.InsertNameSpace;
+import fr.loria.ecoo.so6.command.xml.InsertNode;
+import fr.loria.ecoo.so6.command.xml.InsertProcessingInstruction;
+import fr.loria.ecoo.so6.command.xml.InsertSubTree;
+import fr.loria.ecoo.so6.command.xml.RenameRoot;
+import fr.loria.ecoo.so6.command.xml.UpdateAttribute;
+import fr.loria.ecoo.so6.command.xml.UpdateDocumentType;
+import fr.loria.ecoo.so6.command.xml.UpdateXmlFile;
+
+/**
+ * @author tani
+ */
+public class CmdXmlUtil {
+	/**
+	 * Delta file convertion 
+	 */
+	public static Collection extractXmlCommandsFromDelta(String xmlDeltaFilePath, String destXmlPatchFile, WsConnection ws) throws Exception {
+		ArrayList table = new ArrayList();
+		ArrayList result = new ArrayList();
+		//Document dom = XmlUtil.getDOM(xmlDeltaFilePath, false);
+		Document doc = XmlUtil2.getDocument(xmlDeltaFilePath, false);
+		//NodeList nodeList = dom.getFirstChild().getFirstChild().getChildNodes();
+		Node node = XmlUtil2.getFirstChild(XmlUtil2.getFirstChild(doc));
+		List list = XmlUtil2.getChildNodes(node);
+		//		System.out.println("Length " + nodeList.getLength());
+		for (int i = 0; i < list.size(); i++) {
+			Node cmdNode = (Node) list.get(i);
+			//System.out.println("node -> " + cmdNode.getNodeName());
+			//Node content = cmdNode.getFirstChild();
+			Node content = XmlUtil2.getFirstChild(cmdNode);
+			String commandType = cmdNode.getName();
+			String path = "";
+			int pos = -1;
+			Element cmdElem = null;
+			try {
+				//path = cmdNode.getAttributes().getNamedItem("path").getNodeValue();
+				if (cmdNode.getNodeType() == Node.ELEMENT_NODE) {
+					cmdElem = (Element) cmdNode;
+				}
+				path = cmdElem.attributeValue("path");
+				//pos = Integer.parseInt(cmdNode.getAttributes().getNamedItem("pos").getNodeValue());
+				pos = Integer.parseInt(cmdElem.attributeValue("pos"));
+			} catch (Exception e) {
+				// normal..
+			}
+			if (commandType.equals("i")) {
+				if (content == null) {
+					//System.out.println("Zarb... " + cmdNode.getChildNodes().getLength() + " -> " + xmlDeltaFilePath);
+					System.out.println("Content null " + XmlUtil2.getChildNodes(cmdNode).size() + " -> " + xmlDeltaFilePath);
+					continue;
+				}
+				// insert
+				if (content.getNodeType() == Node.ELEMENT_NODE) {
+					//UpdateXmlFile cmd = new InsertSubTree(destXmlPatchFile, ws, path, XmlUtil.getXmlNode((org.dom4j.Node) content));
+					System.out.println("content " + content.asXML());
+					UpdateXmlFile cmd = new InsertSubTree(destXmlPatchFile, ws, path, content.asXML());
+					table.add(new CmdXml(CmdXml.INSERT_NODE, path, pos, cmd));
+				} else if (content.getNodeType() == Node.PROCESSING_INSTRUCTION_NODE) {
+					//result.add(new InsertProcessingInstructionNode(destXmlPatchFile, ws, path, content.getNodeName(), content.getNodeValue()));
+					UpdateXmlFile cmd = new InsertProcessingInstruction(destXmlPatchFile, ws, path, content.getName(), content.getText());
+					table.add(new CmdXml(CmdXml.INSERT_NODE, path, pos, cmd));
+				} else if (content.getNodeType() == Node.CDATA_SECTION_NODE) {
+					String text = content.getText();
+					boolean cdata = true;
+					if ((text.startsWith("xmlns:"))) {
+						String prefix = text.substring((text.indexOf(':') + 1), text.indexOf('='));
+						String uri = text.substring((text.indexOf('\"') + 1), text.lastIndexOf('\"'));
+
+						UpdateXmlFile cmd = new InsertNameSpace(destXmlPatchFile, ws, path, prefix, uri);
+						table.add(new CmdXml(CmdXml.INSERT_NAMESPACE, path, pos, cmd));
+
+						cdata = false;
+					}
+					if ((text.startsWith("&")) && (text.endsWith(";"))) {
+						String c = text.substring(1, (text.length() - 1));
+						UpdateXmlFile cmd = new InsertNode(destXmlPatchFile, ws, path, Node.ENTITY_REFERENCE_NODE, c);
+						table.add(new CmdXml(CmdXml.INSERT_NODE, path, pos, cmd));
+
+						cdata = false;
+					}
+					if (cdata == true) {
+						String data = content.getText();
+						if (data == null)
+							data = content.getName();
+						//result.add(new InsertNode(destXmlPatchFile, ws, path, content.getNodeType(), data));
+						UpdateXmlFile cmd = new InsertNode(destXmlPatchFile, ws, path, content.getNodeType(), data);
+						table.add(new CmdXml(CmdXml.INSERT_NODE, path, pos, cmd));
+					}
+				} else {
+					String data = content.getText();
+					if (data == null)
+						data = content.getName();
+					//result.add(new InsertNode(destXmlPatchFile, ws, path, content.getNodeType(), data));
+					UpdateXmlFile cmd = new InsertNode(destXmlPatchFile, ws, path, content.getNodeType(), data);
+					table.add(new CmdXml(CmdXml.INSERT_NODE, path, pos, cmd));
+				}
+			} else if (commandType.equals("d")) {
+				// delete
+				int type = content.getNodeType();
+				if (content.getNodeType() == Node.CDATA_SECTION_NODE) {
+					String text = content.getText();
+					boolean cdata = true;
+					if ((text.startsWith("&")) && (text.endsWith(";"))) {
+						type = Node.ENTITY_REFERENCE_NODE;
+						cdata = false;
+					}
+					if (text.startsWith("xmlns:")) {
+						type = Node.NAMESPACE_NODE;
+						cdata = false;
+					}
+					if (cdata == true) {
+						type = Node.CDATA_SECTION_NODE;
+					}
+				}
+				UpdateXmlFile cmd = new DeleteNode(destXmlPatchFile, ws, path, type);
+				table.add(new CmdXml(CmdXml.DELETE_NODE, path, pos, cmd));
+			} else if (commandType.equals("ai")) {
+				// insert attribute
+				//String name = cmdNode.getAttributes().getNamedItem("a").getNodeValue(); 
+				String name = cmdElem.attributeValue("a");
+				//String value = cmdNode.getAttributes().getNamedItem("v").getNodeValue();
+				String value = cmdElem.attributeValue("v");
+				//result.add(new InsertAttribute(destXmlPatchFile, ws, path, name, value));
+				UpdateXmlFile cmd = new InsertAttribute(destXmlPatchFile, ws, path, name, value);
+				table.add(new CmdXml(CmdXml.INSERT_ATTRIBUTE, path, pos, cmd));
+			} else if (commandType.equals("ad")) {
+				// delete attribute
+				//String name = cmdNode.getAttributes().getNamedItem("a").getNodeValue();
+				String name = cmdElem.attributeValue("a");
+				//result.add(new DeleteAttribute(destXmlPatchFile, ws, path, name));
+				UpdateXmlFile cmd = new DeleteAttribute(destXmlPatchFile, ws, path, name);
+				table.add(new CmdXml(CmdXml.DELETE_ATTRIBUTE, path, pos, cmd));
+			} else if (commandType.equals("au")) {
+				// update attribute
+				//String name = cmdNode.getAttributes().getNamedItem("a").getNodeValue();
+				String name = cmdElem.attributeValue("a");
+				//String oldValue = cmdNode.getAttributes().getNamedItem("ov").getNodeValue();
+				String oldValue = cmdElem.attributeValue("ov");
+				//String newValue = cmdNode.getAttributes().getNamedItem("nv").getNodeValue();
+				String newValue = cmdElem.attributeValue("nv");
+				//result.add(new UpdateAttribute(destXmlPatchFile, ws, path, name, oldValue, newValue));
+				UpdateXmlFile cmd = new UpdateAttribute(destXmlPatchFile, ws, path, name, oldValue, newValue);
+				table.add(new CmdXml(CmdXml.UPDATE_ATTRIBUTE, path, pos, cmd));
+			} else if (commandType.equals("renameRoot")) {
+				//String oldValue = cmdNode.getAttributes().getNamedItem("from").getNodeValue();
+				String oldValue = cmdElem.attributeValue("from");
+				//String newValue = cmdNode.getAttributes().getNamedItem("to").getNodeValue();
+				String newValue = cmdElem.attributeValue("to");
+				//result.add(new UpdateNode(destXmlPatchFile, ws, path, Node.ELEMENT_NODE, newValue));
+				UpdateXmlFile cmd = new RenameRoot(destXmlPatchFile, ws, path, oldValue, newValue);
+				table.add(new CmdXml(CmdXml.RENAME_ROOT, path, pos, cmd));
+			} else if (commandType.equals("iNamespaceURI")) {
+				String uri = cmdNode.getText();
+				UpdateXmlFile cmd = new InsertNameSpace(destXmlPatchFile, ws, path, null, uri);
+				table.add(new CmdXml(CmdXml.INSERT_NAMESPACE, path, pos, cmd));
+
+			} else if (commandType.equals("DocType")) {
+				//String docTypeValue = "";
+				if (cmdElem.attributeValue("op").equals("insert")) {
+					String name = null;
+					String systemID = null;
+					String publicID = null;
+					ArrayList v = new ArrayList();
+
+					for (int index = 0; index < cmdElem.nodeCount(); index++) {
+						Node n = cmdElem.node(index);
+
+						if (n.getName().equals("name")) {
+							name = n.getText();
+						}
+
+						if (n.getName().equals("systemID")) {
+							systemID = n.getText();
+						}
+
+						if (n.getName().equals("publicID")) {
+							publicID = n.getText();
+						}
+
+						if (n.getName().equals("InternalDeclaration")) {
+							//String s = n.getText();
+							//v.addElement(s);
+							Element nElem = (Element) n;
+							for (int j = 0; j < nElem.nodeCount(); j++) {
+								Element item = (Element) nElem.node(j);
+
+								if (item.attribute("type").getValue().equals("Entity")) {
+									String iedName = item.node(0).getText();
+									String iedValue = item.node(1).getText();
+
+									InternalEntityDecl ied = new InternalEntityDecl(iedName, iedValue);
+									v.add(ied);
+								}
+
+								if (item.attribute("type").getValue().equals("Element")) {
+									String iedName = item.node(0).getText();
+									String iedModel = item.node(1).getText();
+
+									ElementDecl elemDecl = new ElementDecl(iedName, iedModel);
+									v.add(elemDecl);
+								}
+
+								if (item.attribute("type").getValue().equals("Attribute")) {
+									String elementName = item.node(0).getText();
+									String attributeName = item.node(1).getText();
+									String type = item.node(2).getText();
+									String valueDefault = item.node(3).getText();
+									if (valueDefault.equals("")) {
+										valueDefault = null;
+									}
+									String value = item.node(4).getText();
+
+									AttributeDecl attrDecl = new AttributeDecl(elementName, attributeName, type, valueDefault, value);
+									v.add(attrDecl);
+								}
+
+								if (item.attribute("type").getValue().equals("ExternalEntity")) {
+									String eedName = item.node(0).getText();
+									String eedPublicID = item.node(1).getText();
+									if (eedPublicID.equals("")) {
+										eedPublicID = null;
+									}
+									String eedSystemID = item.node(2).getText();
+									if (eedSystemID.equals("")) {
+										eedSystemID = null;
+									}
+
+									ExternalEntityDecl eed = new ExternalEntityDecl(eedName, eedPublicID, eedSystemID);
+									v.add(eed);
+								}
+							}
+
+						}
+					}
+
+					// insert
+					if ((table.size() > 0) && (((CmdXml) table.get(0)).getType() == CmdXml.UPDATE_DOCTYPE)) {
+						CmdXml cmdXml = (CmdXml) table.get(0);
+						UpdateDocumentType cmd = (UpdateDocumentType) cmdXml.getCmd();
+						cmd.setNewName(name);
+						if (publicID != null) {
+							cmd.setNewPublicID(publicID);
+						}
+						if (systemID != null) {
+							cmd.setNewSystemID(systemID);
+						}
+						if (v != null) {
+							if (!v.isEmpty()) {
+								cmd.setNewInternalDeclaration(v);
+							}
+						}
+
+					} else {
+						//param = name + " " + publicID + " " + systemID;
+						//UpdateDocumentType tmpCmd = new UpdateDocumentType(destXmlPatchFile, ws, null, recup);
+						UpdateXmlFile cmd =
+							new UpdateDocumentType(
+								destXmlPatchFile,
+								ws,
+								new String(),
+								new String(),
+								new String(),
+								new ArrayList(),
+								name,
+								publicID,
+								systemID,
+								v);
+						table.add(0, new CmdXml(CmdXml.UPDATE_DOCTYPE, "0", pos, cmd));
+					}
+				}
+
+				if (cmdElem.attributeValue("op").equals("update")) {
+					Element oldElem = (Element) cmdElem.node(0);
+					Element newElem = (Element) cmdElem.node(1);
+
+					String oldName = null;
+					String oldSystemID = null;
+					String oldPublicID = null;
+					ArrayList olist = new ArrayList();
+
+					String newName = null;
+					String newSystemID = null;
+					String newPublicID = null;
+					ArrayList nlist = new ArrayList();
+
+					for (int index = 0; index < oldElem.nodeCount(); index++) {
+						Node n = oldElem.node(index);
+
+						if (n.getName().equals("name")) {
+							oldName = n.getText();
+						}
+
+						if (n.getName().equals("systemID")) {
+							oldSystemID = n.getText();
+						}
+
+						if (n.getName().equals("publicID")) {
+							oldPublicID = n.getText();
+						}
+
+						if (n.getName().equals("InternalDeclaration")) {
+							//String s = n.getText();
+							//v.addElement(s);
+							Element nElem = (Element) n;
+							for (int j = 0; j < nElem.nodeCount(); j++) {
+								Element item = (Element) nElem.node(j);
+
+								if (item.attribute("type").getValue().equals("Entity")) {
+									String iedName = item.node(0).getText();
+									String iedValue = item.node(1).getText();
+
+									InternalEntityDecl ied = new InternalEntityDecl(iedName, iedValue);
+									olist.add(ied);
+								}
+
+								if (item.attribute("type").getValue().equals("Element")) {
+									String elemDeclName = item.node(0).getText();
+									String elemDeclModel = item.node(1).getText();
+
+									ElementDecl elemDecl = new ElementDecl(elemDeclName, elemDeclModel);
+									olist.add(elemDecl);
+								}
+
+								if (item.attribute("type").getValue().equals("Attribute")) {
+									String elementName = item.node(0).getText();
+									String attributeName = item.node(1).getText();
+									String type = item.node(2).getText();
+									String valueDefault = item.node(3).getText();
+									if (valueDefault.equals("")) {
+										valueDefault = null;
+									}
+									String value = item.node(4).getText();
+
+									AttributeDecl attrDecl = new AttributeDecl(elementName, attributeName, type, valueDefault, value);
+									olist.add(attrDecl);
+								}
+
+								if (item.attribute("type").getValue().equals("ExternalEntity")) {
+									String eedName = item.node(0).getText();
+									String eedPublicId = item.node(1).getText();
+									if (eedPublicId.equals("")) {
+										eedPublicId = null;
+									}
+									String eedSystemId = item.node(2).getText();
+									if (eedSystemId.equals("")) {
+										eedSystemId = null;
+									}
+
+									ExternalEntityDecl eed = new ExternalEntityDecl(eedName, eedPublicId, eedSystemId);
+									olist.add(eed);
+								}
+							}
+						}
+					}
+
+					for (int index = 0; index < newElem.nodeCount(); index++) {
+						Node n = newElem.node(index);
+
+						if (n.getName().equals("name")) {
+							newName = n.getText();
+						}
+
+						if (n.getName().equals("systemID")) {
+							newSystemID = n.getText();
+						}
+
+						if (n.getName().equals("publicID")) {
+							newPublicID = n.getText();
+						}
+
+						if (n.getName().equals("InternalDeclaration")) {
+							//String s = n.getText();
+							//v.addElement(s);
+							Element nElem = (Element) n;
+							for (int j = 0; j < nElem.nodeCount(); j++) {
+								Element item = (Element) nElem.node(j);
+								if (item.attribute("type").getValue().equals("Entity")) {
+									String iedName = item.node(0).getText();
+									String iedValue = item.node(1).getText();
+
+									InternalEntityDecl ied = new InternalEntityDecl(iedName, iedValue);
+									nlist.add(ied);
+								}
+
+								if (item.attribute("type").getValue().equals("Element")) {
+									String elemDeclName = item.node(0).getText();
+									String elemDeclModel = item.node(1).getText();
+
+									ElementDecl elemDecl = new ElementDecl(elemDeclName, elemDeclModel);
+									nlist.add(elemDecl);
+								}
+
+								if (item.attribute("type").getValue().equals("Attribute")) {
+									String elementName = item.node(0).getText();
+									String attributeName = item.node(1).getText();
+									String type = item.node(2).getText();
+									String valueDefault = item.node(3).getText();
+									if (valueDefault.equals("")) {
+										valueDefault = null;
+									}
+									String value = item.node(4).getText();
+
+									AttributeDecl attrDecl = new AttributeDecl(elementName, attributeName, type, valueDefault, value);
+									nlist.add(attrDecl);
+								}
+
+								if (item.attribute("type").getValue().equals("ExternalEntity")) {
+									String eedName = item.node(0).getText();
+									String eedPublicId = item.node(1).getText();
+									if (eedPublicId.equals("")) {
+										eedPublicId = null;
+									}
+									String eedSystemId = item.node(2).getText();
+									if (eedSystemId.equals("")) {
+										eedSystemId = null;
+									}
+
+									ExternalEntityDecl eed = new ExternalEntityDecl(eedName, eedPublicId, eedSystemId);
+									nlist.add(eed);
+								}
+							}
+						}
+					}
+					// update
+					if (table.size() > 0 && ((CmdXml) table.get(0)).getType() == CmdXml.UPDATE_DOCTYPE) {
+						CmdXml cmdXml = (CmdXml) table.get(0);
+						UpdateDocumentType cmd = (UpdateDocumentType) cmdXml.getCmd();
+						//cmd.setOldDoctype(oldDoctype);
+						//cmd.setNewDoctype(newDoctype);
+						cmd.setOldName(oldName);
+						if (oldPublicID != null) {
+							cmd.setOldPublicID(oldPublicID);
+						}
+						if (oldSystemID != null) {
+							cmd.setOldSystemID(oldSystemID);
+						}
+						if (olist != null) {
+							if (!olist.isEmpty()) {
+								cmd.setOldInternalDeclaration(olist);
+							}
+						}
+
+						cmd.setNewName(newName);
+						if (newPublicID != null) {
+							cmd.setNewPublicID(newPublicID);
+						}
+						if (newSystemID != null) {
+							cmd.setNewSystemID(newSystemID);
+						}
+						if (nlist != null) {
+							if (!nlist.isEmpty()) {
+								cmd.setNewInternalDeclaration(nlist);
+							}
+						}
+
+					} else {
+						//UpdateXmlFile cmd = new UpdateDocumentType(destXmlPatchFile, ws, param, "");
+						//table.add(0, new CmdXml(CmdXml.UPDATE_DOCTYPE, "0", pos, cmd));
+
+						UpdateXmlFile cmd =
+							new UpdateDocumentType(destXmlPatchFile, ws, oldName, oldPublicID, oldSystemID, olist, newName, newPublicID, newSystemID, nlist);
+						table.add(0, new CmdXml(CmdXml.UPDATE_DOCTYPE, "0", pos, cmd));
+
+					}
+
+				}
+
+				if (cmdElem.attributeValue("op").equals("delete")) {
+					String name = null;
+					String systemID = null;
+					String publicID = null;
+					ArrayList v = new ArrayList();
+
+					for (int index = 0; index < cmdElem.nodeCount(); index++) {
+						Node n = cmdElem.node(index);
+
+						if (n.getName().equals("name")) {
+							name = n.getText();
+						}
+
+						if (n.getName().equals("systemID")) {
+							systemID = n.getText();
+						}
+
+						if (n.getName().equals("publicID")) {
+							publicID = n.getText();
+						}
+
+						if (n.getName().equals("InternalDeclaration")) {
+							//String s = n.getText();
+							//v.addElement(s);
+							Element nElem = (Element) n;
+							for (int j = 0; j < nElem.nodeCount(); j++) {
+								Element item = (Element) nElem.node(j);
+								if (item.attribute("type").getValue().equals("Entity")) {
+									String iedName = item.node(0).getText();
+									String iedValue = item.node(1).getText();
+
+									InternalEntityDecl ied = new InternalEntityDecl(iedName, iedValue);
+									v.add(ied);
+								}
+
+								if (item.attribute("type").getValue().equals("Element")) {
+									String iedName = item.node(0).getText();
+									String iedModel = item.node(1).getText();
+
+									ElementDecl elemDecl = new ElementDecl(iedName, iedModel);
+									v.add(elemDecl);
+								}
+
+								if (item.attribute("type").getValue().equals("Attribute")) {
+									String elementName = item.node(0).getText();
+									String attributeName = item.node(1).getText();
+									String type = item.node(2).getText();
+									String valueDefault = item.node(3).getText();
+									if (valueDefault.equals("")) {
+										valueDefault = null;
+									}
+									String value = item.node(4).getText();
+
+									AttributeDecl attrDecl = new AttributeDecl(elementName, attributeName, type, valueDefault, value);
+									v.add(attrDecl);
+								}
+
+								if (item.attribute("type").getValue().equals("ExternalEntity")) {
+									String eedName = item.node(0).getText();
+									String eedPublicId = item.node(1).getText();
+									if (eedPublicId.equals("")) {
+										eedPublicId = null;
+									}
+									String eedSystemId = item.node(2).getText();
+									if (eedSystemId.equals("")) {
+										eedSystemId = null;
+									}
+
+									ExternalEntityDecl eed = new ExternalEntityDecl(eedName, eedPublicId, eedSystemId);
+									v.add(eed);
+								}
+							}
+						}
+					}
+					// delete
+					if (table.size() > 0 && ((CmdXml) table.get(0)).getType() == CmdXml.UPDATE_DOCTYPE) {
+						CmdXml cmdXml = (CmdXml) table.get(0);
+						UpdateDocumentType cmd = (UpdateDocumentType) cmdXml.getCmd();
+						if (publicID != null) {
+							cmd.setOldPublicID(publicID);
+						}
+						if (systemID != null) {
+							cmd.setOldSystemID(systemID);
+						}
+						if (v != null) {
+							if (!v.isEmpty()) {
+								cmd.setOldInternalDeclaration(v);
+							}
+						}
+					} else {
+						//UpdateXmlFile cmd = new UpdateDocumentType(destXmlPatchFile, ws, param, "");
+						//table.add(0, new CmdXml(CmdXml.UPDATE_DOCTYPE, "0", pos, cmd));
+						UpdateXmlFile cmd =
+							new UpdateDocumentType(destXmlPatchFile, ws, name, publicID, systemID, v, null, new String(), new String(), new ArrayList());
+						table.add(0, new CmdXml(CmdXml.UPDATE_DOCTYPE, "0", pos, cmd));
+
+					}
+				}
+			}
+		}
+		Object[] toSort = table.toArray();
+		Arrays.sort(toSort);
+		for (int i = 0; i < toSort.length; i++) {
+			CmdXml xmlCmd = (CmdXml) toSort[i];
+			result.add(xmlCmd.getCmd());
+		}
+		return result;
+	}
+
+	public static class CmdXml implements Comparable {
+		;
+		public final static int INSERT_ATTRIBUTE = 1;
+		public final static int DELETE_ATTRIBUTE = 2;
+		public final static int UPDATE_ATTRIBUTE = 3;
+		public final static int UPDATE_DOCTYPE = 4;
+		public final static int RENAME_ROOT = 5;
+		public final static int DELETE_NODE = 6;
+		public final static int INSERT_NODE = 7;
+		public final static int INSERT_NAMESPACE = 8;
+
+		public static int sign(int val) {
+			if (val > 0) {
+				return 1;
+			} else if (val < 0) {
+				return -1;
+			} else {
+				return 0;
+			}
+		}
+		private UpdateXmlFile cmd;
+		private String nodePath;
+
+		private int pos = -1;
+		private int type = -1;
+
+		public CmdXml(int type, String nodePath, int pos, UpdateXmlFile cmd) {
+			this.type = type;
+			this.nodePath = nodePath;
+			this.pos = pos;
+			this.cmd = cmd;
+		}
+		public int compareTo(Object o) {
+			CmdXml cmdXml = (CmdXml) o;
+
+			if (cmdXml.getType() != getType()) {
+				//System.out.println("different type so " + cmdXml.getType() + "-" + getType());
+				return sign(getType() - cmdXml.getType());
+			}
+
+			int result = 0;
+
+			StringTokenizer me = new StringTokenizer(nodePath, ":");
+			StringTokenizer obj = new StringTokenizer(cmdXml.getNodePath(), ":");
+			while (me.hasMoreTokens() && obj.hasMoreTokens()) {
+				int meVal = Integer.parseInt(me.nextToken());
+				int objVal = Integer.parseInt(obj.nextToken());
+				if (meVal != objVal) {
+					//System.out.println("found predecessor path so " + meVal + "-" + objVal);
+					result = sign(meVal - objVal);
+					break;
+				}
+			}
+
+			if (result == 0) {
+				if (me.hasMoreTokens()) {
+					//System.out.println("me has more token");
+					result = 1;
+				} else if (obj.hasMoreTokens()) {
+					//System.out.println("obj has more token");
+					result = -1;
+				} else {
+					//System.out.println("same paths so use positions : " + cmdXml.getPos() + "-" + pos);
+					result = sign(cmdXml.getPos() - pos);
+				}
+			}
+
+			// sort order is reversed for DeleteNode
+			if (cmdXml.getType() == CmdXml.DELETE_NODE) {
+				result = -result;
+			}
+
+			//System.out.println(this.toString() + " compareTo " + o.toString() + " = " + result);
+
+			return result;
+		}
+
+		public UpdateXmlFile getCmd() {
+			return cmd;
+		}
+
+		public String getNodePath() {
+			return nodePath;
+		}
+		public int getPos() {
+			return pos;
+		}
+		public int getType() {
+			return type;
+		}
+		public void setCmd(UpdateXmlFile command) {
+			cmd = command;
+		}
+		public void setNodePath(String string) {
+			nodePath = string;
+		}
+		public void setPos(int i) {
+			pos = i;
+		}
+		public void setType(int i) {
+			type = i;
+		}
+
+		public String toString() {
+			String type;
+
+			switch (getType()) {
+				case INSERT_ATTRIBUTE :
+					type = "AddAttribute";
+					break;
+				case DELETE_ATTRIBUTE :
+					type = "DeleteAttribute";
+					break;
+				case DELETE_NODE :
+					type = "DeleteNode";
+					break;
+				case INSERT_NODE :
+					type = "InsertNode";
+					break;
+				case RENAME_ROOT :
+					type = "RenameRoot";
+					break;
+				case UPDATE_ATTRIBUTE :
+					type = "UpdateAttribute";
+					break;
+				case INSERT_NAMESPACE :
+					type = "InsertNameSpace";
+					break;
+				default :
+					type = "Unknown";
+			}
+
+			return type + "(" + getNodePath() + ")";
+		}
+
+	}
+
+}

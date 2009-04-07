@@ -1,0 +1,267 @@
+package fr.loria.ecoo.so6.test.scenari;
+
+import junit.framework.TestCase;
+import xml.util.XmlUtil2;
+import fr.loria.ecoo.so6.WsConnection;
+import fr.loria.ecoo.so6.engine.util.FileUtils;
+import fr.loria.ecoo.so6.engine.util.CmdXmlUtil.CmdXml;
+import fr.loria.ecoo.so6.test.util.TestUtil;
+
+public class XmlCommandOrderTest extends TestCase {
+
+	private String dir;
+	private String dir1;
+	//private String tmpfilename;
+
+	private WsConnection ws1;
+
+	public XmlCommandOrderTest(String name) {
+		super(name);
+	}
+
+	protected void setUp() throws Exception {
+		dir = FileUtils.createTmpDir().getPath();
+		WsConnection[] ws = TestUtil.createWorkspace(dir, 1, true);
+		ws1 = ws[0];
+		dir1 = ws1.getPath();
+
+		String xmlFilePath = dir1 + "/text.xml";
+		FileUtils.createXmlFile("root", xmlFilePath);
+
+		ws1.updateAndCommit();
+	}
+
+	/*		
+			new InsertNode("dummy.xml",ws1,"0:0",Node.ELEMENT_NODE,"data");
+			new DeleteNode("dummy.xml",ws1,"0:0",Node.ELEMENT_NODE);
+			new InsertAttribute("dummy.xml",ws1,"0:0","attname","value");
+			new DeleteAttribute("dummy.xml",ws1,"0:0","attname");
+			new UpdateAttribute("dummy.xml",ws1,"0:0","attname","oldvalue","newvalue");
+			new UpdateNode("dummy.xml",ws1,"0",Node.ELEMENT_NODE,"newroot");
+	*/
+
+	// TOOLS Functions
+	private CmdXml insertAttribute(String nodePath, int pos) {
+		return new CmdXml(CmdXml.INSERT_ATTRIBUTE, nodePath, pos, null);
+	}
+	private CmdXml deleteAttribute(String nodePath, int pos) {
+		return new CmdXml(CmdXml.DELETE_ATTRIBUTE, nodePath, pos, null);
+	}
+	private CmdXml updateAttribute(String nodePath, int pos) {
+		return new CmdXml(CmdXml.UPDATE_ATTRIBUTE, nodePath, pos, null);
+	}
+	private CmdXml renameRoot(String nodePath, int pos) {
+		return new CmdXml(CmdXml.RENAME_ROOT, nodePath, pos, null);
+	}
+	private CmdXml insertNode(String nodePath, int pos) {
+		return new CmdXml(CmdXml.INSERT_NODE, nodePath, pos, null);
+	}
+	private CmdXml deleteNode(String nodePath, int pos) {
+		return new CmdXml(CmdXml.DELETE_NODE, nodePath, pos, null);
+	}
+
+	public void testInsertNodeOrder() throws Exception {
+		assertTrue(insertNode("0", 1).compareTo(insertNode("0:1", 2)) == -1);
+		assertTrue(insertNode("0:0", 1).compareTo(insertNode("0:1", 2)) == -1);
+		assertTrue(insertNode("0:0", 1).compareTo(insertNode("0:1:0", 1)) == -1);
+		assertTrue(insertNode("0:1", 2).compareTo(insertNode("0:0", 1)) == 1);
+		assertTrue(insertNode("0:1", 2).compareTo(insertNode("0:1", 2)) == 0);
+		assertTrue(insertNode("0:1:0", 1).compareTo(insertNode("0:1", 2)) == 1);
+		assertTrue(insertNode("0:1:0", 1).compareTo(insertNode("0:0", 1)) == 1);
+	}
+
+	public void testDeleteOrder() throws Exception {
+		assertTrue(deleteNode("0", 1).compareTo(deleteNode("0:1", 2)) == 1);
+		assertTrue(deleteNode("0:0", 1).compareTo(deleteNode("0:1", 2)) == 1);
+		assertTrue(deleteNode("0:0", 1).compareTo(deleteNode("0:1:0", 1)) == 1);
+		assertTrue(deleteNode("0:1", 2).compareTo(deleteNode("0:0", 1)) == -1);
+		assertTrue(deleteNode("0:1", 2).compareTo(deleteNode("0:1", 2)) == 0);
+		assertTrue(deleteNode("0:1:0", 1).compareTo(deleteNode("0:1", 2)) == -1);
+		assertTrue(deleteNode("0:1:0", 1).compareTo(deleteNode("0:0", 1)) == -1);
+	}
+
+	public void testInsertAttributeOrder() throws Exception {
+		assertTrue(insertAttribute("0", 1).compareTo(insertAttribute("0:1", 2)) == -1);
+		assertTrue(insertAttribute("0:0", 1).compareTo(insertAttribute("0:1", 2)) == -1);
+		assertTrue(insertAttribute("0:0", 1).compareTo(insertAttribute("0:1:0", 1)) == -1);
+		assertTrue(insertAttribute("0:1", 2).compareTo(insertAttribute("0:0", 1)) == 1);
+		assertTrue(insertAttribute("0:1", 2).compareTo(insertAttribute("0:1", 2)) == 0);
+		assertTrue(insertAttribute("0:1:0", 1).compareTo(insertAttribute("0:1", 2)) == 1);
+		assertTrue(insertAttribute("0:1:0", 1).compareTo(insertAttribute("0:0", 1)) == 1);
+	}
+
+	public void testDeleteAttributeOrder() throws Exception {
+		assertTrue(deleteAttribute("0", 1).compareTo(deleteAttribute("0:1", 2)) == -1);
+		assertTrue(deleteAttribute("0:0", 1).compareTo(deleteAttribute("0:1", 2)) == -1);
+		assertTrue(deleteAttribute("0:0", 1).compareTo(deleteAttribute("0:1:0", 1)) == -1);
+		assertTrue(deleteAttribute("0:1", 2).compareTo(deleteAttribute("0:0", 1)) == 1);
+		assertTrue(deleteAttribute("0:1", 2).compareTo(deleteAttribute("0:1", 2)) == 0);
+		assertTrue(deleteAttribute("0:1:0", 1).compareTo(deleteAttribute("0:1", 2)) == 1);
+		assertTrue(deleteAttribute("0:1:0", 1).compareTo(deleteAttribute("0:0", 1)) == 1);
+	}
+
+	public void testUpdateAttributeOrder() throws Exception {
+		assertTrue(updateAttribute("0", 1).compareTo(updateAttribute("0:1", 2)) == -1);
+		assertTrue(updateAttribute("0:0", 1).compareTo(updateAttribute("0:1", 2)) == -1);
+		assertTrue(updateAttribute("0:0", 1).compareTo(updateAttribute("0:1:0", 1)) == -1);
+		assertTrue(updateAttribute("0:1", 2).compareTo(updateAttribute("0:0", 1)) == 1);
+		assertTrue(updateAttribute("0:1", 2).compareTo(updateAttribute("0:1", 2)) == 0);
+		assertTrue(updateAttribute("0:1:0", 1).compareTo(updateAttribute("0:1", 2)) == 1);
+		assertTrue(updateAttribute("0:1:0", 1).compareTo(updateAttribute("0:0", 1)) == 1);
+	}
+
+	public void testRenameRootOrder() throws Exception {
+		assertTrue(renameRoot("0", 1).compareTo(renameRoot("0", 1)) == 0);
+		assertTrue(renameRoot("0", 1).compareTo(renameRoot("1", 1)) == -1);
+		assertTrue(renameRoot("1", 1).compareTo(renameRoot("0", 1)) == 1);
+	}
+
+	public void testRenameRootVSOthersOrder() throws Exception {
+		assertTrue(renameRoot("0", 1).compareTo(renameRoot("0", 1)) == 0);
+		assertTrue(renameRoot("0", 1).compareTo(deleteAttribute("0", 1)) == 1);
+		assertTrue(renameRoot("0", 1).compareTo(updateAttribute("0", 1)) == 1);
+		assertTrue(renameRoot("0", 1).compareTo(insertAttribute("0", 1)) == 1);
+		assertTrue(renameRoot("0", 1).compareTo(deleteNode("0", 1)) == -1);
+		assertTrue(renameRoot("0", 1).compareTo(insertNode("0", 1)) == -1);
+	}
+
+	public void testDeleteAttributeVSOthersOrder() throws Exception {
+		assertTrue(deleteAttribute("0", 1).compareTo(renameRoot("0", 1)) == -1);
+		assertTrue(deleteAttribute("0", 1).compareTo(deleteAttribute("0", 1)) == 0);
+		assertTrue(deleteAttribute("0", 1).compareTo(updateAttribute("0", 1)) == -1);
+		assertTrue(deleteAttribute("0", 1).compareTo(insertAttribute("0", 1)) == 1);
+		assertTrue(deleteAttribute("0", 1).compareTo(deleteNode("0", 1)) == -1);
+		assertTrue(deleteAttribute("0", 1).compareTo(insertNode("0", 1)) == -1);
+	}
+
+	public void testUpdateAttributeVSOthersOrder() throws Exception {
+		assertTrue(updateAttribute("0", 1).compareTo(renameRoot("0", 1)) == -1);
+		assertTrue(updateAttribute("0", 1).compareTo(deleteAttribute("0", 1)) == 1);
+		assertTrue(updateAttribute("0", 1).compareTo(updateAttribute("0", 1)) == 0);
+		assertTrue(updateAttribute("0", 1).compareTo(insertAttribute("0", 1)) == 1);
+		assertTrue(updateAttribute("0", 1).compareTo(deleteNode("0", 1)) == -1);
+		assertTrue(updateAttribute("0", 1).compareTo(insertNode("0", 1)) == -1);
+	}
+
+	public void testInsertAttributeVSOthersOrder() throws Exception {
+		assertTrue(insertAttribute("0", 1).compareTo(renameRoot("0", 1)) == -1);
+		assertTrue(insertAttribute("0", 1).compareTo(deleteAttribute("0", 1)) == -1);
+		assertTrue(insertAttribute("0", 1).compareTo(updateAttribute("0", 1)) == -1);
+		assertTrue(insertAttribute("0", 1).compareTo(insertAttribute("0", 1)) == 0);
+		assertTrue(insertAttribute("0", 1).compareTo(deleteNode("0", 1)) == -1);
+		assertTrue(insertAttribute("0", 1).compareTo(insertNode("0", 1)) == -1);
+	}
+
+	public void testDeleteNodeVSOthersOrder() throws Exception {
+		assertTrue(deleteNode("0", 1).compareTo(renameRoot("0", 1)) == 1);
+		assertTrue(deleteNode("0", 1).compareTo(deleteAttribute("0", 1)) == 1);
+		assertTrue(deleteNode("0", 1).compareTo(updateAttribute("0", 1)) == 1);
+		assertTrue(deleteNode("0", 1).compareTo(insertAttribute("0", 1)) == 1);
+		assertTrue(deleteNode("0", 1).compareTo(deleteNode("0", 1)) == 0);
+		assertTrue(deleteNode("0", 1).compareTo(insertNode("0", 1)) == -1);
+	}
+
+	public void testInsertNodeVSOthersOrder() throws Exception {
+		assertTrue(insertNode("0", 1).compareTo(renameRoot("0", 1)) == 1);
+		assertTrue(insertNode("0", 1).compareTo(deleteAttribute("0", 1)) == 1);
+		assertTrue(insertNode("0", 1).compareTo(updateAttribute("0", 1)) == 1);
+		assertTrue(insertNode("0", 1).compareTo(insertAttribute("0", 1)) == 1);
+		assertTrue(insertNode("0", 1).compareTo(deleteNode("0", 1)) == 1);
+		assertTrue(insertNode("0", 1).compareTo(insertNode("0", 1)) == 0);
+	}
+
+	public void tearDown() throws Exception {
+		System.out.println(dir);
+	}
+
+	/*
+		public void testTotalOrder() throws Exception {
+			String refxmlFilePath = dir1 + "/../ref.xml";
+			XmlUtil.createXmlFile(refxmlFilePath, "root");
+	
+			String xmlFilePath = dir1 + "/text.xml";
+			//XmlUtil.createXmlFile(xmlFilePath, "root");
+	
+			String deltaFilePath = dir1 + "/../delta.xml";
+			String patchFilePath = dir1 + "/../patch.xml";
+	
+			XmlUtil.insertNode(xmlFilePath, "0:0", Node.ELEMENT_NODE, "chapter1");
+			XmlUtil.insertAttribute(xmlFilePath, "0:0", "title", "Nice Title");
+			XmlUtil.insertNode(xmlFilePath, "0:0:0", Node.ELEMENT_NODE, "section1");
+			XmlUtil.insertAttribute(xmlFilePath, "0:0:0", "title", "The First Section");
+			XmlUtil.insertNode(xmlFilePath, "0:0:0:0", Node.TEXT_NODE, "paragraphe1");
+			XmlUtil.insertNode(xmlFilePath, "0:0:0:1", Node.ELEMENT_NODE, "br");
+			XmlUtil.insertNode(xmlFilePath, "0:0:0:2", Node.TEXT_NODE, "paragraphe2");
+			XmlUtil.insertNode(xmlFilePath, "0:0:1", Node.ELEMENT_NODE, "section2");
+			XmlUtil.insertAttribute(xmlFilePath, "0:0:1", "title", "The Second Section");
+			XmlUtil.insertNode(xmlFilePath, "0:0:1:0", Node.TEXT_NODE, "paragraphe3");
+			XmlUtil.insertNode(xmlFilePath, "0:0:1:1", Node.ELEMENT_NODE, "br");
+			XmlUtil.insertNode(xmlFilePath, "0:0:1:2", Node.TEXT_NODE, "paragraphe4");
+	
+			XmlUtil.insertNode(xmlFilePath, "0:1", Node.ELEMENT_NODE, "chapter2");
+			XmlUtil.insertNode(xmlFilePath, "0:1:0", Node.ELEMENT_NODE, "section1");
+			XmlUtil.insertAttribute(xmlFilePath, "0:1:0", "title", "Another Section");
+	
+			XmlUtil.insertNode(xmlFilePath, "0:2", Node.ELEMENT_NODE, "references");
+	
+			ws1.updateAndCommit();
+			FileUtils.copy(xmlFilePath, refxmlFilePath);
+	
+			XmlUtil.insertNode(xmlFilePath, "0:0:0", Node.TEXT_NODE, "introsection");
+	
+			XmlUtil.insertNode(xmlFilePath, "0:1", Node.ELEMENT_NODE, "introchapter");
+			XmlUtil.insertNode(xmlFilePath, "0:1:0", Node.ELEMENT_NODE, "section1");
+			XmlUtil.insertNode(xmlFilePath, "0:1:0:0", Node.TEXT_NODE, "paragraphe1");
+			XmlUtil.insertNode(xmlFilePath, "0:1:0:1", Node.ELEMENT_NODE, "br");
+	
+			XmlUtil.insertNode(xmlFilePath, "0:1:1", Node.ELEMENT_NODE, "section2");
+	
+			XmlUtil.insertNode(xmlFilePath, "0:2:0", Node.ELEMENT_NODE, "ref1");
+			XmlUtil.insertNode(xmlFilePath, "0:2:1", Node.ELEMENT_NODE, "ref2");
+	
+			XmlUtil.insertAttribute(xmlFilePath, "0:1:0", "title", "The First Section");
+	
+			XyDiff d = new XyDiff(refxmlFilePath, xmlFilePath, deltaFilePath, XmlUtil.ignoreWhiteSpace, false);
+			Collection cmds = XmlUtil.extractXmlCommandsFromDelta(deltaFilePath, patchFilePath, ws1);
+	
+			for (Iterator i = cmds.iterator(); i.hasNext();) {
+				System.out.println(i.next());
+			}
+	
+			// good order
+			//InsertNode(/tmp/lstest1075829063751/dir1/../patch.xml, 0:0:0, 3, introsection)
+			//InsertSubTree(/tmp/lstest1075829063751/dir1/../patch.xml, 0:1, <introchapter><section1 title="The First Section">paragraphe1<br/></section1><section2/></introchapter>)
+			//InsertSubTree(/tmp/lstest1075829063751/dir1/../patch.xml, 0:2:0, <ref1/>)
+			//InsertSubTree(/tmp/lstest1075829063751/dir1/../patch.xml, 0:2:1, <ref2/>)
+	
+			ws1.updateAndCommit();
+			FileUtils.copy(xmlFilePath, refxmlFilePath);
+	
+			XmlUtil.deleteNode(xmlFilePath, "0:3", Node.ELEMENT_NODE);
+			XmlUtil.deleteNode(xmlFilePath, "0:2:0", Node.ELEMENT_NODE);
+			XmlUtil.deleteNode(xmlFilePath, "0:0", Node.ELEMENT_NODE);
+			XmlUtil.deleteNode(xmlFilePath, "0:1:0", Node.ELEMENT_NODE);
+	
+			XyDiff d2 = new XyDiff(refxmlFilePath, xmlFilePath, deltaFilePath, XmlUtil.ignoreWhiteSpace, false);
+			cmds = XmlUtil.extractXmlCommandsFromDelta(deltaFilePath, patchFilePath, ws1);
+	
+			for (Iterator i = cmds.iterator(); i.hasNext();) {
+				System.out.println(i.next());
+			}
+	
+			// good order
+			//DeleteNode(/tmp/lstest1075825167299/dir1/../patch.xml, 0:2, 1)
+			//DeleteNode(/tmp/lstest1075825167299/dir1/../patch.xml, 0:0:1:2, 3)
+			//DeleteNode(/tmp/lstest1075825167299/dir1/../patch.xml, 0:0:1:1, 1)
+			//DeleteNode(/tmp/lstest1075825167299/dir1/../patch.xml, 0:0:1:0, 3)
+			//DeleteNode(/tmp/lstest1075825167299/dir1/../patch.xml, 0:0:0:1, 1)
+			//DeleteNode(/tmp/lstest1075825167299/dir1/../patch.xml, 0:0:0, 1)
+			//InsertSubTree(/tmp/lstest1075825167299/dir1/../patch.xml, 0:0:0:0, <br/>)
+	
+			//XmlUtil.insertAttribute(xmlFilePath1, "0:1", "attr1", "value1");
+			//XmlUtil.deleteAttribute(xmlFilePath1,"0:0","attr1");
+			//assertTrue("The dir1 <> dir2", FileUtils.compareDir(dir1, dir2));
+		}
+	*/
+
+}
