@@ -213,17 +213,13 @@
 			<artifactId>jlibdiff</artifactId>
 			<version>2.0</version>
 		</dependency>
+		<!--
 		<dependency>
 			<groupId>fr.loria.ecoo</groupId>
 			<artifactId>jxydiff</artifactId>
 			<version>1.0</version>
-		</dependency>		
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.5</version>
-			<scope>test</scope>
 		</dependency>
+		-->		
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpmime</artifactId>
@@ -233,6 +229,12 @@
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 			<version>4.0-beta2</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.5</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 </project>
