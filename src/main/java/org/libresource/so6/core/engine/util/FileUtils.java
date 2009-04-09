@@ -33,12 +33,6 @@
  */
 package org.libresource.so6.core.engine.util;
 
-import fr.loria.ecoo.so6.xml.xydiff.XyDiff;
-
-import jlibdiff.Diff;
-
-import org.libresource.so6.core.Workspace;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -49,12 +43,15 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.zip.ZipOutputStream;
+
+import jlibdiff.Diff;
+
+import org.libresource.so6.core.Workspace;
 
 
 public class FileUtils {
@@ -643,6 +640,7 @@ public class FileUtils {
         remove(getBaseTmpPath());
     }
 
+/*
     public static boolean compareXmlFile(String file1, String file2)
         throws Exception {
         XyDiff d = new XyDiff(file1, file2);
@@ -654,4 +652,5 @@ public class FileUtils {
 
         return cmds.size() == 0;
     }
+*/    
 }

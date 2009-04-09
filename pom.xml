@@ -147,7 +147,7 @@
 			        <executions>
 			           <execution>
 			              <goals>
-			                 <goal>jnlp</goal> <!-- use jnlp, jnlp-inline or jnlp-single as appropriate -->
+			                 <goal>package</goal> <!-- use jnlp, jnlp-inline or jnlp-single as appropriate -->
 			              </goals>
 			           </execution>
 			        </executions>

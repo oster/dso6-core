@@ -37,7 +37,7 @@ import junit.framework.TestCase;
 
 import org.libresource.so6.core.WsConnection;
 import org.libresource.so6.core.client.ClientI;
-import org.libresource.so6.core.client.DummyClient;
+import org.libresource.so6.core.client.dummy.DummyClient;
 import org.libresource.so6.core.engine.util.FileUtils;
 import org.libresource.so6.core.test.util.TestUtil;
 

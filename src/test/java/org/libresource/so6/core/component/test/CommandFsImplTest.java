@@ -39,7 +39,7 @@ package org.libresource.so6.core.component.test;
 import junit.framework.TestCase;
 
 import org.libresource.so6.core.WsConnection;
-import org.libresource.so6.core.client.DummyClient;
+import org.libresource.so6.core.client.dummy.DummyClient;
 import org.libresource.so6.core.command.Command;
 import org.libresource.so6.core.command.fs.AddDir;
 import org.libresource.so6.core.command.text.AddTxtFile;
