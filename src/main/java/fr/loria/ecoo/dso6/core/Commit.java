@@ -36,7 +36,7 @@ public class Commit {
 			if (queuesDatabase.containsKey(queueId)) {
 				basePath = queuesDatabase.getProperty(queueId);
 			} else {
-				throw new NotYetCheckedOut();
+				throw new NotYetCheckedOutException();
 			}
 
 			Workspace ws = null;
@@ -52,14 +52,14 @@ public class Commit {
 				// ask the user for commit message
 				wsc.commit("HERE IS THE COMMIT MESSAGE");
 			} catch (IOException ex) {
-				throw new NotYetCheckedOut(ex);
+				throw new NotYetCheckedOutException(ex);
 			}
 			System.out.println(wsc.getReport());
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		} catch (NotYetCheckedOut e) {
+		} catch (NotYetCheckedOutException e) {
 			e.printStackTrace();			
 		} catch (Exception e) {
 			e.printStackTrace();

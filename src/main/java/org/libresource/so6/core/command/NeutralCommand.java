@@ -40,7 +40,10 @@ import org.libresource.so6.core.WsConnection;
  * @author smack
  */
 public abstract class NeutralCommand extends Command {
-    public NeutralCommand(String path, WsConnection ws) {
+
+	private static final long serialVersionUID = -3969408758307797436L;
+
+	public NeutralCommand(String path, WsConnection ws) {
         super(path, ws);
     }
 

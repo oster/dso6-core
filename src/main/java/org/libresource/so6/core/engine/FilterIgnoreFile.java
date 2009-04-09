@@ -68,12 +68,6 @@ public class FilterIgnoreFile implements FilenameFilter {
             return false;
         }
 
-        //File f=new File(dir+File.separator+name);
-        //if (f.isFile() && (f.length()==0)) {
-        //	Logger.getLogger("ui.log").warning("refusing (size=0):" +
-        // dir.getPath() + ":" + name);
-        //	return false;
-        //}
         if (ignore.match(dir, name)) {
             Logger.getLogger("ui.log").warning("ignoring:" + dir.getPath() + ":" + name);
 

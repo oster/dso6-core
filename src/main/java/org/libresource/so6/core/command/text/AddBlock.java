@@ -33,6 +33,20 @@
  */
 package org.libresource.so6.core.command.text;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import jlibdiff.HunkAdd;
 
 import org.libresource.so6.core.WsConnection;
@@ -40,48 +54,28 @@ import org.libresource.so6.core.engine.DBType;
 import org.libresource.so6.core.engine.util.Base64;
 import org.libresource.so6.core.engine.util.FileUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberInputStream;
-import java.io.LineNumberReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Writer;
-
-import java.nio.charset.Charset;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-
 
 public class AddBlock extends UpdateTextFile {
     private static final long serialVersionUID = 3;
     private int insertPoint = -1;
-    private ArrayList linesToAdd = null;
+    private List<String> linesToAdd = null;
 
-    public AddBlock(long ticket, String path, String wsName, long time, boolean conflict, int insertPoint, ArrayList linesToAdd) {
+    public AddBlock(long ticket, String path, String wsName, long time, boolean conflict, int insertPoint, List<String> linesToAdd) {
         super(ticket, path, wsName, time, conflict, null);
         this.insertPoint = insertPoint;
         this.linesToAdd = linesToAdd;
     }
 
-    public AddBlock(String path, WsConnection ws, int insertPoint, Collection c) {
+    public AddBlock(String path, WsConnection ws, int insertPoint, List<String> c) {
         super(path, ws);
         this.insertPoint = insertPoint;
-        this.linesToAdd = new ArrayList(c);
+        this.linesToAdd = new ArrayList<String>(c);
     }
 
-    public AddBlock(String path, WsConnection ws, HunkAdd ha) {
+	public AddBlock(String path, WsConnection ws, HunkAdd ha) {
         super(path, ws);
         this.insertPoint = ha.getLD2(); //+1;
-        this.linesToAdd = new ArrayList(ha.getNewContent());
+        this.linesToAdd = new ArrayList<String>(ha.getNewContent());
     }
 
     public int getSize() {
@@ -100,21 +94,21 @@ public class AddBlock extends UpdateTextFile {
         this.insertPoint += inc;
     }
 
-    public void setContent(Collection c) {
-        this.linesToAdd = new ArrayList(c);
+    public void setContent(List<String> c) {
+        this.linesToAdd = new ArrayList<String>(c);
     }
 
-    public Collection getContent() {
+    public List<String> getContent() {
         return this.linesToAdd;
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
-        //for(Iterator i =linesToAdd.iterator();i.hasNext();)
-        //    System.out.println(i.next());
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
         doTheJobOnFile(dir + File.separator + path);
     }
 
-    public void doTheJobOnFile(String path) throws Exception {
+    @Override
+	public void doTheJobOnFile(String path) throws Exception {
         File tmpFile = File.createTempFile("AddBlock", null);
         File f = new File(path);
         InputStreamReader isr = new InputStreamReader(new FileInputStream(f), Charset.forName(System.getProperty("file.encoding")));
@@ -136,7 +130,7 @@ public class AddBlock extends UpdateTextFile {
             }
         }
 
-        for (Iterator i = linesToAdd.iterator(); i.hasNext();) {
+        for (Iterator<String> i = linesToAdd.iterator(); i.hasNext();) {
             output.println((String) i.next());
         }
 
@@ -155,7 +149,8 @@ public class AddBlock extends UpdateTextFile {
         }
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "AddBlock(" + path + "," + getInsertPoint() + "," + getSize() + ")";
     }
 
@@ -163,39 +158,20 @@ public class AddBlock extends UpdateTextFile {
         return "AddBlock(" + path + "," + getInsertPoint() + "," + getSize() + "," + getContent() + ")";
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof AddBlock) {
             AddBlock a = (AddBlock) o;
             boolean b = path.equals(a.path) && (insertPoint == a.insertPoint) && linesToAdd.equals(a.linesToAdd);
 
-            //			String msg =
-            //				""
-            //					+ "\n AddBlock Equals ["
-            //					+ Boolean.toString(b)
-            //					+ "]"
-            //					+ "\n this"
-            //					+ "\n path:"
-            //					+ path
-            //					+ "\n insertPoint:"
-            //					+ insertPoint
-            //					+ "\n linesToAdd:"
-            //					+ linesToAdd.toString()
-            //					+ "\n param"
-            //					+ "\n path:"
-            //					+ a.path
-            //					+ "\n insertPoint:"
-            //					+ a.insertPoint
-            //					+ "\n linesToAdd:"
-            //					+ a.linesToAdd.toString()
-            //					+ "\n";
-            //			Logger.getLogger("arf").info(msg);
             return b;
         } else {
             return false;
         }
     }
 
-    public void toXML(Writer osw) throws IOException {
+    @Override
+	public void toXML(Writer osw) throws IOException {
         super.toXML(osw);
         osw.write("<insertpoint>" + insertPoint + "</insertpoint>");
         osw.write("<contrib>");
@@ -203,7 +179,7 @@ public class AddBlock extends UpdateTextFile {
         osw.write("</contrib>");
         osw.write("<linesToAdd>");
 
-        Iterator it = linesToAdd.iterator();
+        Iterator<String> it = linesToAdd.iterator();
 
         while (it.hasNext()) {
             String line = (String) it.next();

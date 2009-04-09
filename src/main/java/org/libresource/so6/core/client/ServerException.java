@@ -34,7 +34,10 @@
 package org.libresource.so6.core.client;
 
 public class ServerException extends Exception {
-    public ServerException(String message) {
+
+	private static final long serialVersionUID = -1130411992333526227L;
+
+	public ServerException(String message) {
         super(message);
     }
 

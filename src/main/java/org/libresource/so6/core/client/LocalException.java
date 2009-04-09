@@ -34,7 +34,10 @@
 package org.libresource.so6.core.client;
 
 public class LocalException extends Exception {
-    public LocalException(String message) {
+
+	private static final long serialVersionUID = -4228731045719331776L;
+
+	public LocalException(String message) {
         super(message);
     }
 

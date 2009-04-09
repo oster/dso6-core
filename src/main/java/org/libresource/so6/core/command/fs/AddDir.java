@@ -50,11 +50,13 @@ public class AddDir extends FsCommand {
         super(path, ws);
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "AddDir(" + path + ")";
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof AddDir) {
             return path.equals(((AddDir) o).path);
         } else {
@@ -62,7 +64,8 @@ public class AddDir extends FsCommand {
         }
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
         File f = new File(dir + File.separator + path);
 
         if (!f.mkdir()) {

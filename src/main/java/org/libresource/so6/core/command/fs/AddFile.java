@@ -48,6 +48,6 @@ public abstract class AddFile extends FsCommand {
         super(path, ws);
     }
 
-    abstract public void execute(String dir, DBType dbt)
-        throws Exception;
+    @Override
+	public abstract void execute(String dir, DBType dbt) throws Exception;
 }

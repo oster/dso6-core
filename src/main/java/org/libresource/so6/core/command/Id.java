@@ -56,11 +56,13 @@ public class Id extends NeutralCommand {
         return this.cmd;
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "Id(" + cmd + ")";
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof Id) {
             return cmd.equals(((Id) o).cmd);
         }
@@ -68,7 +70,8 @@ public class Id extends NeutralCommand {
         return false;
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
     }
 
     public void postSend(FileParser fp) throws Exception {

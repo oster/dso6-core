@@ -34,7 +34,9 @@
 package org.libresource.so6.core.engine.exception;
 
 public class ClientException extends Exception {
-    public ClientException(String cause) {
-        super(cause);
-    }
+	private static final long serialVersionUID = -4335147215057503167L;
+
+	public ClientException(String cause) {
+		super(cause);
+	}
 }

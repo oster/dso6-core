@@ -34,7 +34,10 @@
 package org.libresource.so6.core.client;
 
 public class ConnectionException extends Exception {
-    public ConnectionException(Exception e) {
+
+	private static final long serialVersionUID = 4029521720671475088L;
+
+	public ConnectionException(Exception e) {
         super(e);
     }
 

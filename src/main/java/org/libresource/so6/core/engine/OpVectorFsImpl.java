@@ -33,8 +33,6 @@
  */
 package org.libresource.so6.core.engine;
 
-import org.libresource.so6.core.command.Command;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -43,17 +41,20 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-
 import java.util.ArrayList;
+import java.util.List;
 import java.util.ListIterator;
+
+import org.libresource.so6.core.command.Command;
 
 
 /**
  * @author molli
  */
 public class OpVectorFsImpl implements OpVector, Serializable {
-    private String root; // where to put commands...
-    private ArrayList paths = new ArrayList();
+	private static final long serialVersionUID = 5871207625911143792L;
+	private String root; // where to put commands...
+    private List<String> paths = new ArrayList<String>();
     private long fromTicket;
     private long toTicket;
 
@@ -118,8 +119,6 @@ public class OpVectorFsImpl implements OpVector, Serializable {
             so.writeObject(cmd);
             so.flush();
             so.close();
-
-            //oids.add(pos, cmd.getPath());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -163,7 +162,7 @@ public class OpVectorFsImpl implements OpVector, Serializable {
     public void close() throws Exception {
     }
 
-    public ListIterator getCommands() throws Exception {
+    public ListIterator<Command> getCommands() throws Exception {
         return new CmdIterator();
     }
 
@@ -175,11 +174,11 @@ public class OpVectorFsImpl implements OpVector, Serializable {
         return toTicket;
     }
 
-    public ArrayList getPathList() throws Exception {
+    public List<String> getPathList() throws Exception {
         return paths;
     }
 
-    class CmdIterator implements ListIterator {
+    class CmdIterator implements ListIterator<Command> {
         private int i = 0;
 
         CmdIterator() {
@@ -188,7 +187,7 @@ public class OpVectorFsImpl implements OpVector, Serializable {
         public void close() {
         }
 
-        public Object next() {
+        public Command next() {
             Command cmd = null;
 
             if (i < paths.size()) {
@@ -201,12 +200,12 @@ public class OpVectorFsImpl implements OpVector, Serializable {
             return null;
         }
 
-        public void set(Object c) {
+        public void set(Command c) {
             OpVectorFsImpl.this.update((Command) c, i - 1);
         }
 
         public void remove() {
-            throw new RuntimeException("methode remove not implemented");
+            throw new RuntimeException("method remove not implemented");
         }
 
         public boolean hasNext() {
@@ -225,12 +224,12 @@ public class OpVectorFsImpl implements OpVector, Serializable {
             return i > 0;
         }
 
-        public Object previous() {
+        public Command previous() {
             return getCommand(previousIndex());
         }
 
-        public void add(Object o) {
-            throw new RuntimeException("methode remove not implemented");
+        public void add(Command o) {
+            throw new RuntimeException("method add not implemented");
         }
     }
 }

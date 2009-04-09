@@ -40,7 +40,7 @@ public class RmDir {
     private File path;
 
     /**
-     * Instanciate the command that allow a recursive delete
+     * Instantiate the command that allow a recursive delete
      *
      * @param path
      */

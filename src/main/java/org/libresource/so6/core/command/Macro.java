@@ -33,11 +33,11 @@
  */
 package org.libresource.so6.core.command;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.libresource.so6.core.WsConnection;
 import org.libresource.so6.core.engine.DBType;
-
-import java.util.Collection;
-import java.util.Vector;
 
 
 public class Macro extends Command {
@@ -49,7 +49,8 @@ public class Macro extends Command {
         setTicket(cmd.getTicket());
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return new String("Macro(" + path + "," + cmds[0] + "," + cmds[1] + ")");
     }
 
@@ -89,8 +90,8 @@ public class Macro extends Command {
         this.cmds[index - 1] = cmd;
     }
 
-    public Collection getCommands() {
-        Vector v = new Vector();
+    public List<Command> getCommands() {
+        List<Command> v = new ArrayList<Command>();
         Command cmd1 = getCommand(1);
         Command cmd2 = getCommand(2);
 
@@ -109,7 +110,8 @@ public class Macro extends Command {
         return v;
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof Macro) {
             Macro m = (Macro) o;
             boolean b = path.equals(m.path);
@@ -124,11 +126,10 @@ public class Macro extends Command {
         }
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
         for (int i = 0; i < cmds.length; i++) {
             if (cmds[i] != null) {
-                //Logger.getLogger("cmd.exec").info("macro executing cmd[" + i
-                // + "]=" + cmds[i].toString());
                 cmds[i].execute(dir, dbt);
             }
         }

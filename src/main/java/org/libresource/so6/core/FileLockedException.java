@@ -37,7 +37,9 @@ import java.io.File;
 
 
 public class FileLockedException extends Exception {
-    private File file;
+
+	private static final long serialVersionUID = -5897756503020941205L;
+	private File file;
 
     public FileLockedException(String message) {
         super(message);

@@ -56,11 +56,13 @@ public class Rename extends FsCommand {
         this.newpath = newpath;
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "Rename(" + path + "," + newpath + ")";
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof Rename) {
             Rename r = (Rename) o;
 
@@ -78,7 +80,8 @@ public class Rename extends FsCommand {
         this.newpath = path;
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
         File f = new File(dir + File.separator + path);
         File f2 = new File(dir + File.separator + newpath);
 

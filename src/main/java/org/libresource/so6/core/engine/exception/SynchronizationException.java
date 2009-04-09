@@ -34,7 +34,9 @@
 package org.libresource.so6.core.engine.exception;
 
 public class SynchronizationException extends Exception {
-    public SynchronizationException(String cause) {
-        super(cause);
-    }
+	private static final long serialVersionUID = -2144666158353855062L;
+
+	public SynchronizationException(String cause) {
+		super(cause);
+	}
 }

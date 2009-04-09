@@ -34,7 +34,10 @@
 package org.libresource.so6.core.client;
 
 public class PatchNotFoundException extends Exception {
-    public PatchNotFoundException(String e) {
+
+	private static final long serialVersionUID = 7771452006101979960L;
+
+	public PatchNotFoundException(String e) {
         super(e);
     }
 

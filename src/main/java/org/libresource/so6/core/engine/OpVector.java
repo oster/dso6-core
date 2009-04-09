@@ -33,10 +33,10 @@
  */
 package org.libresource.so6.core.engine;
 
-import org.libresource.so6.core.command.Command;
-
-import java.util.ArrayList;
+import java.util.List;
 import java.util.ListIterator;
+
+import org.libresource.so6.core.command.Command;
 
 
 public interface OpVector {
@@ -52,7 +52,7 @@ public interface OpVector {
 
     public Command getCommand(int pos) throws Exception;
 
-    public ListIterator getCommands() throws Exception;
+    public ListIterator<Command> getCommands() throws Exception;
 
-    public ArrayList getPathList() throws Exception;
+    public List<String> getPathList() throws Exception;
 }

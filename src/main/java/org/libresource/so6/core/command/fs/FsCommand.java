@@ -41,7 +41,9 @@ import org.libresource.so6.core.command.Command;
  * @author smack
  */
 public abstract class FsCommand extends Command {
-    public FsCommand(String path, WsConnection ws) {
+	private static final long serialVersionUID = 4505156503245239328L;
+
+	public FsCommand(String path, WsConnection ws) {
         super(path, ws);
     }
 

@@ -43,8 +43,6 @@ import org.libresource.so6.core.command.fs.Rename;
 import org.libresource.so6.core.command.text.UpdateTextFile;
 import org.libresource.so6.core.engine.util.ObjectCloner;
 
-import java.lang.reflect.Method;
-
 
 /**
  * @author Ecoo Team Loria
@@ -53,7 +51,7 @@ import java.lang.reflect.Method;
  * Implements transformation function Collaboration: Log (merge)
  * @author <a href="mailto:molli@loria.fr">Pascal Molli </a>, <a
  *         href="mailto:oster@loria.fr">Gerald Oster </a>, <a
- *         href="mailto:jourdain@loria.fr">S�bastien Jourdain </a>
+ *         href="mailto:jourdain@loria.fr">Sebastien Jourdain </a>
  * @version 1.0
  */
 public class TransformationFunctions {
@@ -77,10 +75,6 @@ public class TransformationFunctions {
      * c2 is the remote Command, c1 is the local command (already executed)
      */
     public Command transp(Command c1, Command c2) throws Exception {
-        Command res = null;
-        Method m = null;
-
-        //System.out.println("tf( " + c1 + " , " + c2 + " )");
         try {
             if ((c1 instanceof NeutralCommand) || (c2 instanceof NeutralCommand)) {
                 return c1;

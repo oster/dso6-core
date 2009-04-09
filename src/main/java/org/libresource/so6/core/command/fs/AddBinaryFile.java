@@ -78,7 +78,6 @@ public class AddBinaryFile extends AddFile {
         try {
             tmppath = File.createTempFile("attach", null, tmpDestDir).getPath();
 
-            File f = new File(tmppath);
             FileUtils.copy(ws.getPath() + File.separator + path, tmppath);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -87,11 +86,13 @@ public class AddBinaryFile extends AddFile {
         this.setAttachement(tmppath);
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "AddBinaryFile(" + path + ")";
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof AddBinaryFile) {
             return path.equals(((AddBinaryFile) o).path);
         } else {
@@ -99,7 +100,8 @@ public class AddBinaryFile extends AddFile {
         }
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
         FileUtils.copy(this.getAttachement(), dir + File.separator + path);
 
         /*

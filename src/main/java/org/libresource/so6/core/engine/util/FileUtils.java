@@ -44,9 +44,7 @@ import java.io.LineNumberReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.List;
 import java.util.zip.ZipOutputStream;
 
 import jlibdiff.Diff;
@@ -445,7 +443,7 @@ public class FileUtils {
     }
 
     /**
-     * Walk a directoy recursively and add the file path in the specified
+     * Walk a directory recursively and add the file path in the specified
      * vector.
      *
      * @param dir
@@ -453,7 +451,7 @@ public class FileUtils {
      * @param result
      *            vector of the file path
      */
-    public static void walk(String dir, Vector result) {
+    public static void walk(String dir, List<String> result) {
         File f = new File(dir);
 
         if (f.isFile() || f.isDirectory()) {
@@ -478,7 +476,6 @@ public class FileUtils {
      */
     public static void copy(String input, String output)
         throws Exception {
-        //System.out.println("copy: " + input +" -> "+ output);
         FileInputStream fis = new FileInputStream(input);
         FileOutputStream fos = new FileOutputStream(output);
         byte[] buffer = new byte[1024];

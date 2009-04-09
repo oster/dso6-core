@@ -34,7 +34,10 @@
 package org.libresource.so6.core;
 
 public class WorkspaceCorruptedException extends Exception {
-    public WorkspaceCorruptedException(String message) {
+
+	private static final long serialVersionUID = -4304995966409826720L;
+
+	public WorkspaceCorruptedException(String message) {
         super(message);
     }
 

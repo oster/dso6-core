@@ -34,7 +34,10 @@
 package org.libresource.so6.core.client;
 
 public class AuthenticationException extends Exception {
-    public AuthenticationException() {
+
+	private static final long serialVersionUID = 2091070031984513679L;
+
+	public AuthenticationException() {
         super("Invalid login or password");
     }
 }

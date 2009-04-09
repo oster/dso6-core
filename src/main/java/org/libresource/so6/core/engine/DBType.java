@@ -33,17 +33,17 @@
  */
 package org.libresource.so6.core.engine;
 
-import org.libresource.so6.core.Workspace;
-import org.libresource.so6.core.engine.util.FileUtils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
+
+import org.libresource.so6.core.Workspace;
+import org.libresource.so6.core.engine.util.FileUtils;
 
 
 /**
@@ -62,7 +62,7 @@ public class DBType {
     //private Hashtable ht = new Hashtable();
     private Properties props = new Properties();
     private String filePath;
-    private ArrayList binExt = new ArrayList();
+    private List<String> binExt = new ArrayList<String>();
 
     public DBType(String filePath, String binExt) {
         this.filePath = filePath;

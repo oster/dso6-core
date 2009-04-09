@@ -34,7 +34,10 @@
 package org.libresource.so6.core.client;
 
 public class UnableToContactServerException extends Exception {
-    public UnableToContactServerException(Exception e) {
+
+	private static final long serialVersionUID = 2391309957659750076L;
+
+	public UnableToContactServerException(Exception e) {
         super(e);
     }
 

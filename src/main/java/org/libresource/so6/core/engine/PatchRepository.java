@@ -56,13 +56,13 @@ import javax.xml.parsers.SAXParserFactory;
  * @author molli
  */
 public class PatchRepository {
-    private WsConnection ws;
+    //private WsConnection ws;
     private String name;
     private String dir;
     private Properties prop = new Properties();
 
     public PatchRepository(WsConnection ws, String name) {
-        this.ws = ws;
+        //this.ws = ws;
         this.name = name;
         this.dir = ws.getDataPath() + File.separator + name;
 

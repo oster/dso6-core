@@ -33,27 +33,27 @@
  */
 package org.libresource.so6.core.engine.util;
 
-import org.libresource.so6.core.command.Command;
-
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+
+import org.libresource.so6.core.command.Command;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 
 /**
@@ -96,8 +96,6 @@ public class FileBrowserPatchHandler {
     }
 
     public static void main(String[] args) throws Exception {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
-        SAXParser saxParser = factory.newSAXParser();
         FileBrowserPatchHandler patchBrowser = new FileBrowserPatchHandler(args[1]);
 
         if ((args.length == 3) && args[2].equals("html")) {
@@ -112,7 +110,8 @@ public class FileBrowserPatchHandler {
             super(workingDir);
         }
 
-        public void endDocument() throws SAXException {
+        @Override
+		public void endDocument() throws SAXException {
             // build html web page
             try {
                 Properties props = new Properties();
@@ -135,7 +134,8 @@ public class FileBrowserPatchHandler {
             this.listOp = listOp;
         }
 
-        public void endDocument() throws SAXException {
+        @Override
+		public void endDocument() throws SAXException {
             // build html web page
             try {
                 File f = new File(baseWorkingDir, "index.html");
@@ -145,7 +145,7 @@ public class FileBrowserPatchHandler {
                 int index = 0;
                 Arrays.sort(pathList.toArray());
 
-                for (Iterator i = pathList.iterator(); i.hasNext();) {
+                for (Iterator<String> i = pathList.iterator(); i.hasNext();) {
                     String localPath = (String) i.next();
                     fw.write("<tr bgcolor=\"#" + (((index++ % 2) == 0) ? "ccccee" : "eeeeee") + "\"><td>" + localPath + "</td><td>");
 
@@ -158,7 +158,7 @@ public class FileBrowserPatchHandler {
                     if (listOp) {
                         fw.write("<tr><td><ul>");
 
-                        for (Iterator j = ((ArrayList) filesIndex.get(localPath)).iterator(); j.hasNext();) {
+                        for (Iterator<String> j = filesIndex.get(localPath).iterator(); j.hasNext();) {
                             fw.write("<li>");
                             fw.write((String) j.next());
                             fw.write("</li>");
@@ -186,20 +186,20 @@ public class FileBrowserPatchHandler {
         private String className;
         private String path;
 
-        // information to retreive
+        // information to retrieve
         private long fromTicket = -1;
         private long toTicket = -1;
         private String wsName;
         private String comment = "";
-        protected Hashtable filesIndex;
-        protected Hashtable filesAttachement;
-        protected ArrayList pathList;
+        protected Map<String, List<String>> filesIndex;
+        protected Map<String, String> filesAttachement;
+        protected List<String> pathList;
 
         public BrowsePatchHandler(String baseWorkingDir) {
-            this.filesIndex = new Hashtable();
-            this.filesAttachement = new Hashtable();
+            this.filesIndex = new Hashtable<String, List<String>>();
+            this.filesAttachement = new Hashtable<String, String>();
             this.baseWorkingDir = new File(baseWorkingDir);
-            this.pathList = new ArrayList();
+            this.pathList = new ArrayList<String>();
         }
 
         public long getFromTicket() {
@@ -218,11 +218,12 @@ public class FileBrowserPatchHandler {
             return comment;
         }
 
-        public Hashtable getFileIndex() {
+        public Map<String, List<String>> getFileIndex() {
             return filesIndex;
         }
 
-        public void characters(char[] buff, int offset, int len)
+        @Override
+		public void characters(char[] buff, int offset, int len)
             throws SAXException {
             if (tag.equals(Command.ATTACHEMENT)) {
                 buffer.append(buff, offset, len);
@@ -252,7 +253,8 @@ public class FileBrowserPatchHandler {
             }
         }
 
-        public void endElement(String namespaceuri, String sname, String qname)
+        @Override
+		public void endElement(String namespaceuri, String sname, String qname)
             throws SAXException {
             if (qname.equals(Command.ATTACHEMENT)) {
                 try {
@@ -303,19 +305,20 @@ public class FileBrowserPatchHandler {
                     pathList.add(path);
                 }
 
-                ArrayList opList = (ArrayList) filesIndex.get(path);
+                List<String> opList = filesIndex.get(path);
 
                 if (opList != null) {
                     opList.add(className);
                 } else {
-                    opList = new ArrayList();
+                    opList = new ArrayList<String>();
                     opList.add(className);
                     filesIndex.put(path, opList);
                 }
             }
         }
 
-        public void startElement(String namespaceuri, String sname, String qname, Attributes attr)
+        @Override
+		public void startElement(String namespaceuri, String sname, String qname, Attributes attr)
             throws SAXException {
             tag = qname;
             buffer = new StringBuffer();

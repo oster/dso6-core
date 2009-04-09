@@ -33,10 +33,6 @@
  */
 package org.libresource.so6.core;
 
-import org.libresource.so6.core.client.ClientI;
-import org.libresource.so6.core.engine.util.FileUtils;
-import org.libresource.so6.core.engine.util.UniqueId;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -44,9 +40,13 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+
+import org.libresource.so6.core.client.ClientI;
+import org.libresource.so6.core.engine.util.FileUtils;
+import org.libresource.so6.core.engine.util.UniqueId;
 
 
 /**
@@ -242,7 +242,7 @@ public class Workspace {
                     }
                 });
 
-        ArrayList tmpResult = new ArrayList();
+        List<WsConnection> tmpResult = new ArrayList<WsConnection>();
 
         for (int i = 0; i < connections.length; i++) {
             try {
@@ -310,7 +310,7 @@ public class Workspace {
         }
     }
 
-    // Private methodes
+    // Private methods
     private String extractIdFromFile(File f) throws IOException {
         StringBuffer result = new StringBuffer();
         FileInputStream fis = new FileInputStream(f);
@@ -326,8 +326,7 @@ public class Workspace {
         return result.toString();
     }
 
-    private void buildRecursiveId(ArrayList idList, File baseDir)
-        throws Exception {
+    private void buildRecursiveId(List<String> idList, File baseDir) throws Exception {
         File[] subFiles = baseDir.listFiles(new FilenameFilter() {
                     public boolean accept(File dir, String name) {
                         return name.equals(SO6PREFIX);

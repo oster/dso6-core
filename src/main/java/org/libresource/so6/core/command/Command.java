@@ -44,7 +44,7 @@ import java.io.Serializable;
 import java.io.Writer;
 
 
-abstract public class Command implements Serializable, Comparable {
+abstract public class Command implements Serializable, Comparable<Command> {
     private static final long serialVersionUID = 3;
     public static final String ATTACHEMENT = "attachement";
     protected long ticket = -1;
@@ -77,9 +77,7 @@ abstract public class Command implements Serializable, Comparable {
     }
 
     // Comparable
-    public int compareTo(Object o) {
-        Command cmd = (Command) o;
-
+    public int compareTo(Command cmd) {
         if (this.getTicket() < cmd.getTicket()) {
             return -1;
         }
@@ -111,26 +109,26 @@ abstract public class Command implements Serializable, Comparable {
         }
     }
 
-    abstract public void execute(String dir, DBType dbt)
-        throws Exception;
+    public abstract void execute(String dir, DBType dbt) throws Exception;
 
-    abstract public boolean equals(Object obj);
+    @Override
+	public abstract boolean equals(Object obj);
 
-    public Object clone() {
+    @Override
+	public Object clone() {
         Object result = null;
 
         try {
             result = ObjectCloner.deepCopy(this);
         } catch (Exception e) {
             e.printStackTrace();
-
-            //System.exit(1);
         }
 
         return result;
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         String cmdName = getClass().getName();
         cmdName = cmdName.substring(cmdName.lastIndexOf(".") + 1);
 
@@ -178,7 +176,7 @@ abstract public class Command implements Serializable, Comparable {
         time = l;
     }
 
-    // For attachement
+    // For attachment
     public String getAttachement() {
         return attachement;
     }

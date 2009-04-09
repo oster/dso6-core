@@ -33,12 +33,25 @@
  */
 package org.libresource.so6.core;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.lang.reflect.Constructor;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Properties;
+import java.util.Vector;
+import java.util.logging.Logger;
+
 import org.libresource.so6.core.client.ClientI;
 import org.libresource.so6.core.command.Command;
 import org.libresource.so6.core.command.fs.AddBinaryFile;
 import org.libresource.so6.core.command.fs.AddDir;
-import org.libresource.so6.core.command.fs.Remove;
-import org.libresource.so6.core.command.fs.UpdateBinaryFile;
 import org.libresource.so6.core.command.text.AddTxtFile;
 import org.libresource.so6.core.engine.DBType;
 import org.libresource.so6.core.engine.FileParser;
@@ -54,26 +67,10 @@ import org.libresource.so6.core.engine.util.ObjectCloner;
 import org.libresource.so6.core.report.CVSReportMaker;
 import org.libresource.so6.core.tf.TransformationFunctions;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-
-import java.lang.reflect.Constructor;
-
-import java.util.Iterator;
-import java.util.ListIterator;
-import java.util.Properties;
-import java.util.Vector;
-import java.util.logging.Logger;
-
 
 /*
    class Workspace:
-   Responsability:
+   Responsibility:
    manage the persistence of workspace data
    Collaboration:
    Log
@@ -90,7 +87,10 @@ import java.util.logging.Logger;
  * @since JDK1.4
  */
 public class WsConnection implements java.io.Serializable {
-    /** Name of the file where the WsConnection meta data will be stored */
+
+	private static final long serialVersionUID = 102984967911724563L;
+
+	/** Name of the file where the WsConnection meta data will be stored */
     public static final String SO6_WSC_FILE = "so6.properties";
 
     /** Name of last patch file sent during the commit */
@@ -201,7 +201,7 @@ public class WsConnection implements java.io.Serializable {
     private PatchRepository receivedPatch;
     private DBType dbtype;
     private RefCopy refcopy;
-    private Vector patchFilter;
+    private List<String> patchFilter;
 
     //
     private StringBuffer report;
@@ -249,7 +249,7 @@ public class WsConnection implements java.io.Serializable {
 
     /**
      * The logger is used to monitor what it's going on an update or commit
-     * operation. The logger follow the XML syntaxe in order to represent the
+     * operation. The logger follow the XML syntax in order to represent the
      * current state of the current Job.
      * <p>
      * To get more information look at the
@@ -324,7 +324,7 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * The temp working directory
+     * The temporary working directory
      *
      * @return path of the directory
      */
@@ -333,8 +333,8 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * Load meta data from the filesystem. (Need to be used when concurrent
-     * update on the filesystem.)
+     * Load meta data from the file system. (Need to be used when concurrent
+     * update on the file system.)
      *
      * @param path
      *            The path of the workspace connection property file
@@ -418,9 +418,9 @@ public class WsConnection implements java.io.Serializable {
         return prop.getProperty(propName);
     }
 
-    private String getSynchronizeClientName() {
-        return getProperty(WsConnection.SYNC_CLIENT_NAME);
-    }
+    //private String getSynchronizeClientName() {
+    //    return getProperty(WsConnection.SYNC_CLIENT_NAME);
+    //}
 
     /**
      * Return the current connection ticket. The ticket is equivalent to a
@@ -583,9 +583,6 @@ public class WsConnection implements java.io.Serializable {
         } else {
             // check nb command that need to be sent
             lastticket = (ticket + computeNbCommandToSend(opv)) - 1;
-
-            // System.out.println("Op to send with filter: " +
-            // computeNbCommandToSend(opv) + "/" + opv.size());
         }
 
         StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
@@ -684,7 +681,7 @@ public class WsConnection implements java.io.Serializable {
                 // +UPDATE_CORRUPTION_PATCH_LOCAL_COPY);
                 StateMonitoring.getInstance().setXMLMonitoringStartCriticalPart();
 
-                ListIterator iterator = mergedOp.getCommands();
+                ListIterator<Command> iterator = mergedOp.getCommands();
                 Command cmd = null;
 
                 while ((cmd = (Command) iterator.next()) != null) {
@@ -693,7 +690,7 @@ public class WsConnection implements java.io.Serializable {
                     cmd.execute(this.getPath(), this.getDBType());
                 }
             } else {
-                // System.out.println("Same patch do not apply it localy !!!");
+                // System.out.println("Same patch do not apply it locally !!!");
             }
 
             setCorrupted(UPDATE_CORRUPTION_PATCH_REF_COPY);
@@ -841,8 +838,8 @@ public class WsConnection implements java.io.Serializable {
      */
     public void restore() throws Exception {
         String patchFileName;
-        String tmpBasePath;
-        String tmpDataPath;
+        //String tmpBasePath;
+        //String tmpDataPath;
         File src;
         File dst;
 
@@ -897,17 +894,17 @@ public class WsConnection implements java.io.Serializable {
             src = new File(getRefCopyPath());
             dst = new File(getPath());
             FileUtils.copy(src, dst);
-            System.out.println("Copy ok !");
+            //System.out.println("Copy ok !");
 
             OpVectorFsImpl localOp = new OpVectorFsImpl(getLocalCmdPath());
             localOp.load();
 
-            ListIterator i = localOp.getCommands();
+            ListIterator<Command> i = localOp.getCommands();
             Command cmd = null;
             DBType localDBType = new DBType(getDataPath() + File.separator + "DBTYPE" + File.separator + "local.dbtype", "");
 
-            while ((cmd = (Command) i.next()) != null) {
-                System.out.println("execute: " + cmd);
+            while ((cmd = i.next()) != null) {
+                //System.out.println("execute: " + cmd);
                 cmd.execute(getPath(), localDBType);
             }
 
@@ -933,7 +930,7 @@ public class WsConnection implements java.io.Serializable {
             localOp = new OpVectorFsImpl(getLocalCmdPath());
             localOp.load();
 
-            ListIterator li = localOp.getCommands();
+            ListIterator<Command> li = localOp.getCommands();
             cmd = null;
 
             //
@@ -947,7 +944,7 @@ public class WsConnection implements java.io.Serializable {
             osw.write("<end>" + localOp.getToTicket() + "</end>");
             osw.write("<comment>" + Base64.encodeBytes("Patch rebuild from a restore".getBytes("UTF-8")) + "</comment>");
 
-            while ((cmd = (Command) li.next()) != null) {
+            while ((cmd = li.next()) != null) {
                 osw.write("<command>");
                 osw.write("<class>" + cmd.getClass().getName() + "</class>");
                 cmd.toXML(osw);
@@ -984,7 +981,6 @@ public class WsConnection implements java.io.Serializable {
             break;
 
         case COMMIT_CORRUPTION_SAVE_PATCH:
-
             String patchFile = getClient().getPatch(getLastTicketBeforeCorruption() + 1);
             appliedPatch.add(patchFile);
             setCorrupted(NO_CORRUPTION);
@@ -1019,7 +1015,7 @@ public class WsConnection implements java.io.Serializable {
      * @throws Exception
      */
     public void merge(Command cmd, OpVector local) throws Exception {
-        Command origcmd = (Command) ObjectCloner.deepCopy(cmd);
+        //Command origcmd = (Command) ObjectCloner.deepCopy(cmd);
         Command opl;
 
         // for root node
@@ -1059,9 +1055,9 @@ public class WsConnection implements java.io.Serializable {
 
         // for each child
         // iterator = localop.getSubTreeCommands(cmd.getPath());
-        ListIterator iterator = local.getCommands();
+        ListIterator<Command> iterator = local.getCommands();
 
-        while ((opl = (Command) iterator.next()) != null) {
+        while ((opl = iterator.next()) != null) {
             Command oplt = de.transp(opl, cmd);
 
             if (!oplt.equals(opl)) {
@@ -1113,7 +1109,6 @@ public class WsConnection implements java.io.Serializable {
         FileUtils.createDir(getAttachFilePath());
         FileUtils.createDir(getLocalCmdPath());
 
-        //
         mergedTime = System.currentTimeMillis();
         FileUtils.createDir(getMergedOpPath());
         FileUtils.createDir(getMergedAttachPath());
@@ -1127,7 +1122,7 @@ public class WsConnection implements java.io.Serializable {
      *
      * @param filter
      */
-    public void setFilter(Vector filter) {
+    public void setFilter(List<String> filter) {
         this.patchFilter = filter;
     }
 
@@ -1151,17 +1146,17 @@ public class WsConnection implements java.io.Serializable {
             throw new Exception("No filter set !!!");
         }
 
-        ListIterator iterator = localOp.getCommands();
+        ListIterator<Command> iterator = localOp.getCommands();
         Command cmd = null;
 
-        while ((cmd = (Command) iterator.next()) != null) {
+        while ((cmd = iterator.next()) != null) {
             String path = cmd.getPath();
 
             if (patchFilter.contains(path)) {
                 nbCommandToKeep++;
             } else {
-                for (Iterator i = patchFilter.iterator(); i.hasNext();) {
-                    File pathFiltered = new File((String) i.next());
+                for (Iterator<String> i = patchFilter.iterator(); i.hasNext();) {
+                    File pathFiltered = new File(i.next());
 
                     if ((pathFiltered.getParent() != null) && pathFiltered.getParent().startsWith(path)) {
                         throw new Exception("Dependency error: " + path);
@@ -1279,9 +1274,8 @@ public class WsConnection implements java.io.Serializable {
                 break;
 */
             default:
-
                 // nothing
-                System.out.println(relativePath + " => " + fileType);
+                //System.out.println(relativePath + " => " + fileType);
 
                 break;
             }

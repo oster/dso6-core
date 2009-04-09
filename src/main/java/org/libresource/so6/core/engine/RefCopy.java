@@ -36,12 +36,12 @@
  */
 package org.libresource.so6.core.engine;
 
-import org.libresource.so6.core.WsConnection;
-
 import java.io.File;
-
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+
+import org.libresource.so6.core.WsConnection;
 
 
 /**
@@ -65,7 +65,7 @@ public class RefCopy {
         return dbt;
     }
 
-    private static void walk(String dir, String root, ArrayList result) {
+    private static void walk(String dir, String root, List<String> result) {
         File f = new File(dir);
 
         if (f.isFile()) {
@@ -85,8 +85,8 @@ public class RefCopy {
         }
     }
 
-    public Iterator getElements() {
-        ArrayList v = new ArrayList();
+    public Iterator<String> getElements() {
+        List<String> v = new ArrayList<String>();
         walk(ws.getRefCopyPath() + "/", ws.getRefCopyPath() + "/", v);
 
         return v.iterator();

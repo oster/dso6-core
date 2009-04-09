@@ -37,7 +37,20 @@
 package org.libresource.so6.core.engine;
 
 
-import org.libresource.so6.core.StateMonitoring;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.logging.Logger;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
 import org.libresource.so6.core.WsConnection;
 import org.libresource.so6.core.command.Command;
 import org.libresource.so6.core.command.NeutralCommand;
@@ -51,26 +64,9 @@ import org.libresource.so6.core.command.text.AddTxtFile;
 import org.libresource.so6.core.command.text.DelBlock;
 import org.libresource.so6.core.engine.util.Base64;
 import org.libresource.so6.core.engine.util.FileUtils;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.ListIterator;
-import java.util.Vector;
-import java.util.logging.Logger;
-
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
 
 /**
@@ -78,18 +74,18 @@ import javax.xml.parsers.SAXParserFactory;
  */
 public class PatchFile {
     private String patchfile;
-    private OpVector locals;
+    //private OpVector locals;
     private File baseAttachDir;
 
     public PatchFile(String patchfile) {
         this.patchfile = patchfile;
     }
 
-    public static void makePatch(OpVector opv, OutputStreamWriter osw, Vector patchFilter, long fromTicket, long toTicket, String origine, String comment)
+    public static void makePatch(OpVector opv, OutputStreamWriter osw, List<String> patchFilter, long fromTicket, long toTicket, String origin, String comment)
         throws Exception {
         osw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         osw.write("<patch>");
-        osw.write("<name>" + Base64.encodeBytes(origine.getBytes("UTF-8")) + "</name>");
+        osw.write("<name>" + Base64.encodeBytes(origin.getBytes("UTF-8")) + "</name>");
         osw.write("<begin>" + fromTicket + "</begin>");
         osw.write("<end>" + toTicket + "</end>");
 
@@ -98,7 +94,7 @@ public class PatchFile {
         }
 
         long ticket = fromTicket;
-        ListIterator iterator = opv.getCommands();
+        ListIterator<Command> iterator = opv.getCommands();
         Command cmd = null;
 
         while ((cmd = (Command) iterator.next()) != null) {
@@ -143,7 +139,7 @@ public class PatchFile {
         ws.getDBType().save();
     }
 
-    public void buildOpVector(OpVector vector, String baseAttachDir, Collection filter)
+    public void buildOpVector(OpVector vector, String baseAttachDir, List<String> filter)
         throws Exception {
         this.baseAttachDir = new File(baseAttachDir);
 
@@ -152,7 +148,7 @@ public class PatchFile {
         saxParser.parse(new File(patchfile), new BuildOpVectorPatchHandler(vector, filter));
     }
 
-    public void buildOpVector(InputStream in, OpVector vector, String baseAttachDir, Collection filter)
+    public void buildOpVector(InputStream in, OpVector vector, String baseAttachDir, List<String> filter)
         throws Exception {
         this.baseAttachDir = new File(baseAttachDir);
 
@@ -174,7 +170,8 @@ public class PatchFile {
             this.dbt = dbt;
         }
 
-        public void doit(Command cmd) {
+        @Override
+		public void doit(Command cmd) {
             try {
                 StateMonitoring.getInstance().setXMLMonitoringState(fromTicket, toTicket, ticket, "Apply patch(" + cmd + ")");
                 Logger.getLogger("ui.log").info("executing:" + cmd);
@@ -195,7 +192,8 @@ public class PatchFile {
             this.ws = ws;
         }
 
-        public void doit(Command cmd) {
+        @Override
+		public void doit(Command cmd) {
             try {
                 StateMonitoring.getInstance().setXMLMonitoringState(fromTicket, toTicket, ticket, "Merging patch(" + cmd + ")");
                 ws.merge(cmd, locals);
@@ -208,19 +206,20 @@ public class PatchFile {
 
     public class BuildOpVectorPatchHandler extends PatchHandler {
         private OpVector vector;
-        private WsConnection ws;
-        private Collection filter;
+        //private WsConnection ws;
+        private List<String> filter;
 
-        BuildOpVectorPatchHandler(OpVector vector, Collection filter) {
+        BuildOpVectorPatchHandler(OpVector vector, List<String> filter) {
             this.vector = vector;
             this.filter = filter;
         }
 
-        public void setFilter(Collection filter) {
+        public void setFilter(List<String> filter) {
             this.filter = filter;
         }
 
-        public void doit(Command cmd) {
+        @Override
+		public void doit(Command cmd) {
             try {
                 if (filter == null) {
                     vector.add(cmd);
@@ -241,12 +240,12 @@ public class PatchFile {
         private StringBuffer buffer;
         private FileOutputStream fos;
         private Command cmd;
-        private ArrayList alist;
+        private List<String> alist;
 
         // for patch
         protected long fromTicket = -1;
         protected long toTicket = -1;
-        private String classname;
+        private String className;
         private String filename;
         protected long ticket;
         private String path;
@@ -269,7 +268,8 @@ public class PatchFile {
         PatchHandler() {
         }
 
-        public void characters(char[] buff, int offset, int len)
+        @Override
+		public void characters(char[] buff, int offset, int len)
             throws SAXException {
             // TODO improve base64 use
             if (tag.equals(Command.ATTACHEMENT)) {
@@ -280,8 +280,6 @@ public class PatchFile {
                 while ((pos = buffer.indexOf("\n")) != -1) {
                     while ((pos = buffer.indexOf("\n")) != -1) {
                         buffer.deleteCharAt(pos);
-
-                        //System.out.println("Remove invalide base64 char");
                     }
 
                     int nbCharToDecode = (buffer.length() / 4);
@@ -302,7 +300,8 @@ public class PatchFile {
             }
         }
 
-        public void endElement(String namespaceuri, String sname, String qname)
+        @Override
+		public void endElement(String namespaceuri, String sname, String qname)
             throws SAXException {
             if (qname.equals(Command.ATTACHEMENT)) {
                 try {
@@ -323,7 +322,7 @@ public class PatchFile {
             }
 
             if (qname.equals("class")) {
-                classname = buffer.toString();
+            	className = buffer.toString();
             }
 
             if (qname.equals("ticket")) {
@@ -425,61 +424,61 @@ public class PatchFile {
 
             // Build real command
             if (qname.equals("command")) {
-                if (checkCommandType(classname, Rename.class.getName())) {
+                if (checkCommandType(className, Rename.class.getName())) {
                     cmd = new Rename(ticket, path, wsName, time.longValue(), false, null, newPath);
                 }
 
-                if (checkCommandType(classname, AddDir.class.getName())) {
+                if (checkCommandType(className, AddDir.class.getName())) {
                     cmd = new AddDir(ticket, path, wsName, time.longValue(), false, null);
                 }
 
-                if (checkCommandType(classname, AddTxtFile.class.getName())) {
+                if (checkCommandType(className, AddTxtFile.class.getName())) {
                     cmd = new AddTxtFile(ticket, path, wsName, time.longValue(), false, filename);
                 }
 
-                if (checkCommandType(classname, Remove.class.getName())) {
+                if (checkCommandType(className, Remove.class.getName())) {
                     cmd = new Remove(ticket, path, wsName, time.longValue(), false, null);
                 }
 
-                if (checkCommandType(classname, AddBlock.class.getName())) {
+                if (checkCommandType(className, AddBlock.class.getName())) {
                     cmd = new AddBlock(ticket, path, wsName, time.longValue(), false, insertPoint.intValue(), alist);
                 }
 
-                if (checkCommandType(classname, DelBlock.class.getName())) {
+                if (checkCommandType(className, DelBlock.class.getName())) {
                     cmd = new DelBlock(ticket, path, wsName, time.longValue(), false, deletePoint.intValue(), alist);
                 }
 
-                if (checkCommandType(classname, AddBinaryFile.class.getName())) {
+                if (checkCommandType(className, AddBinaryFile.class.getName())) {
                     cmd = new AddBinaryFile(ticket, path, wsName, time.longValue(), false, filename);
                 }
 
-                if (checkCommandType(classname, UpdateBinaryFile.class.getName())) {
+                if (checkCommandType(className, UpdateBinaryFile.class.getName())) {
                     cmd = new UpdateBinaryFile(ticket, path, wsName, time.longValue(), false, filename);
                 }
 
 /* TODO: Reintegrate XML support as a plugin feature?
                 // XML
-                if (checkCommandType(classname, AddXmlFile.class.getName())) {
+                if (checkCommandType(className, AddXmlFile.class.getName())) {
                     cmd = new AddXmlFile(ticket, path, wsName, time.longValue(), filename);
                 }
 
-                if (checkCommandType(classname, DeleteAttribute.class.getName())) {
+                if (checkCommandType(className, DeleteAttribute.class.getName())) {
                     cmd = new DeleteAttribute(ticket, path, wsName, time.longValue(), xmlNodePath, xmlAttributeName);
                 }
 
-                if (checkCommandType(classname, DeleteNode.class.getName())) {
+                if (checkCommandType(className, DeleteNode.class.getName())) {
                     cmd = new DeleteNode(ticket, path, wsName, time.longValue(), xmlNodePath, treeNode);
                 }
 
-                if (checkCommandType(classname, InsertAttribute.class.getName())) {
+                if (checkCommandType(className, InsertAttribute.class.getName())) {
                     cmd = new InsertAttribute(ticket, path, wsName, time.longValue(), xmlNodePath, xmlAttributeName, xmlAttributeValue);
                 }
 
-                if (checkCommandType(classname, InsertNode.class.getName())) {
+                if (checkCommandType(className, InsertNode.class.getName())) {
                     cmd = new InsertNode(ticket, path, wsName, time.longValue(), xmlNodePath, treeNode);
                 }
 
-                if (checkCommandType(classname, UpdateAttribute.class.getName())) {
+                if (checkCommandType(className, UpdateAttribute.class.getName())) {
                     cmd = new UpdateAttribute(ticket, path, wsName, time.longValue(), xmlNodePath, xmlAttributeName, xmlOldAttributeValue, xmlAttributeValue);
                 }
 */
@@ -495,13 +494,14 @@ public class PatchFile {
 
         public abstract void doit(Command cmd);
 
-        public void startElement(String namespaceuri, String sname, String qname, Attributes attr)
+        @Override
+		public void startElement(String namespaceuri, String sname, String qname, Attributes attr)
             throws SAXException {
             tag = qname;
             buffer = new StringBuffer();
 
             if (qname.equals("linesToAdd") || qname.equals("linesToRemove")) {
-                alist = new ArrayList();
+                alist = new ArrayList<String>();
             }
 
             if (qname.equals(Command.ATTACHEMENT)) {

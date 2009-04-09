@@ -102,7 +102,7 @@ public class AddTxtFile extends AddFile {
         try {
             tmppath = File.createTempFile("attach", null, tmpDestDir).getPath();
 
-            File f = new File(tmppath);
+            //File f = new File(tmppath);
             FileUtils.copy(ws.getPath() + File.separator + path, tmppath);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -117,11 +117,13 @@ public class AddTxtFile extends AddFile {
         }
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "AddTxtFile(" + path + ")";
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof AddTxtFile) {
             return path.equals(((AddTxtFile) o).path);
         } else {
@@ -133,7 +135,8 @@ public class AddTxtFile extends AddFile {
         return nbLines;
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
         FileUtils.copy(this.getAttachement(), dir + File.separator + path);
 
         /*

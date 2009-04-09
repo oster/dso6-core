@@ -33,6 +33,15 @@
  */
 package org.libresource.so6.core.report;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.libresource.so6.core.command.Command;
 import org.libresource.so6.core.command.Macro;
 import org.libresource.so6.core.command.UpdateFile;
@@ -43,15 +52,6 @@ import org.libresource.so6.core.command.fs.Rename;
 import org.libresource.so6.core.command.fs.UpdateBinaryFile;
 import org.libresource.so6.core.engine.OpVectorFsImpl;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.ListIterator;
-
 
 /**
  * @author smack
@@ -59,7 +59,7 @@ import java.util.ListIterator;
 public class CVSReportMaker {
     //
     private OpVectorFsImpl opVector;
-    private Hashtable indexTable;
+    private Map<String, FileMetaData> indexTable;
     private long from;
     private long to;
 
@@ -68,16 +68,16 @@ public class CVSReportMaker {
         opVector.load();
         from = opVector.getFromTicket();
         to = opVector.getToTicket();
-        indexTable = new Hashtable();
+        indexTable = new Hashtable<String, FileMetaData>();
     }
 
     public void buildIndexTable() throws Exception {
         Command cmd = null;
-        ListIterator iterator = opVector.getCommands();
+        Iterator<Command> iterator = opVector.getCommands();
 
-        while ((cmd = (Command) iterator.next()) != null) {
+        while ((cmd = iterator.next()) != null) {
             String path = cmd.getPath();
-            FileMetaData metaData = (FileMetaData) indexTable.get(path);
+            FileMetaData metaData = indexTable.get(path);
 
             if (metaData == null) {
                 metaData = new FileMetaData(path);
@@ -96,9 +96,9 @@ public class CVSReportMaker {
         OutputStreamWriter ostw = new OutputStreamWriter(out);
         ostw.write("---\n");
 
-        for (Enumeration e = indexTable.keys(); e.hasMoreElements();) {
-            String path = (String) e.nextElement();
-            FileMetaData data = (FileMetaData) indexTable.get(path);
+        for (Iterator<String> e = indexTable.keySet().iterator(); e.hasNext();) {
+            String path = e.next();
+            FileMetaData data = indexTable.get(path);
 
             // print
             ostw.write(data.toString() + "\n");
@@ -116,9 +116,9 @@ public class CVSReportMaker {
         StringBuffer buffer = new StringBuffer();
         buffer.append("---\n");
 
-        for (Enumeration e = indexTable.keys(); e.hasMoreElements();) {
-            String path = (String) e.nextElement();
-            FileMetaData data = (FileMetaData) indexTable.get(path);
+        for (Iterator<String> e = indexTable.keySet().iterator(); e.hasNext();) {
+            String path = e.next();
+            FileMetaData data = indexTable.get(path);
 
             // print
             buffer.append(data.toString() + "\n");
@@ -148,11 +148,11 @@ public class CVSReportMaker {
         //
         private boolean conflict = false;
         private String path;
-        private ArrayList cmds;
+        private List<String> cmds;
 
         FileMetaData(String path) {
             this.path = path;
-            cmds = new ArrayList();
+            cmds = new ArrayList<String>();
         }
 
         public void applyCmd(Command cmd) {
@@ -186,7 +186,7 @@ public class CVSReportMaker {
             }
         }
 
-        public ArrayList getCmdsList() {
+        public List<String> getCmdsList() {
             return cmds;
         }
 
@@ -208,7 +208,8 @@ public class CVSReportMaker {
             return "";
         }
 
-        public String toString() {
+        @Override
+		public String toString() {
             StringBuffer buffer = new StringBuffer();
 
             if (conflict) {

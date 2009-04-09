@@ -34,7 +34,10 @@
 package org.libresource.so6.core.client;
 
 public class InvalidTicketException extends Exception {
-    public InvalidTicketException() {
+
+	private static final long serialVersionUID = -8613226396245887738L;
+
+	public InvalidTicketException() {
         super("Invalid ticket");
     }
 

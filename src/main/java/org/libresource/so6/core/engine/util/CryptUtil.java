@@ -45,8 +45,4 @@ public class CryptUtil {
     public static String decode(String cryptedPassord) {
         return new String(Base64.decode(cryptedPassord));
     }
-
-    public static void main(String[] args) {
-        System.out.println(encode(args[0]));
-    }
 }

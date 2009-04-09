@@ -33,14 +33,12 @@ public class BasicClientImpl implements ClientI {
 	public final static String DSO6_COMMIT_CAPABILITY = "dso6.commit.capability";
 	public final static String DSO6_UPDATE_CAPABILITY = "dso6.update.capability";
 	public final static String DSO6_ENDPOINT_URI = "dso6.endpoint.uri";
-	// private final static String SO6_DOWNLOAD_DIR = "so6.download.dir";
 	private final static String DEFAULT_BINEXT = "class pdf ps eps exe zip jar gif jpg png";
 	// private final static String PROP_FILE = "so6.properties";
 	// private final static String LAST_TICKET = "so6.last.ticket";
 	// private final static String BINEXT = "so6.bin.ext";
 
 	private final static String TICKET = "ticket";
-	private final static String QUEUES = "queues";
 	private final static String PATCHES = "patches";
 	private final static String ALL = "all";
 

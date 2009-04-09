@@ -51,11 +51,13 @@ public class Remove extends FsCommand {
         super(path, ws);
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "Remove(" + path + ")";
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof Remove) {
             return path.equals(((Remove) o).path);
         } else {
@@ -63,8 +65,9 @@ public class Remove extends FsCommand {
         }
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
-        File f = new File(dir + File.separator + path);
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
+        //File f = new File(dir + File.separator + path);
 
         /*
          * if (!f.delete()) { throw new Exception("Unable to remove path " +

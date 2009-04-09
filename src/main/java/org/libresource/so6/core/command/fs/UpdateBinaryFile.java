@@ -74,7 +74,6 @@ public class UpdateBinaryFile extends FsCommand implements Serializable {
         try {
             tmppath = File.createTempFile("attach", null, tmpDestDir).getPath();
 
-            File f = new File(tmppath);
             FileUtils.copy(ws.getPath() + File.separator + path, tmppath);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -83,7 +82,8 @@ public class UpdateBinaryFile extends FsCommand implements Serializable {
         this.setAttachement(tmppath);
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof UpdateBinaryFile) {
             UpdateBinaryFile ubf = (UpdateBinaryFile) o;
 
@@ -105,11 +105,13 @@ public class UpdateBinaryFile extends FsCommand implements Serializable {
         }
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "UpdateBinaryFile(" + path + ")";
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
         FileUtils.copy(this.getAttachement(), dir + File.separator + path);
     }
 }

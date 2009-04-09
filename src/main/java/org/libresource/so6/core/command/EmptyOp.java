@@ -55,11 +55,13 @@ public class EmptyOp extends NeutralCommand {
         setTicket(ticket);
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "CompressedOp";
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof EmptyOp) {
             return true;
         }
@@ -67,7 +69,8 @@ public class EmptyOp extends NeutralCommand {
         return false;
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
     }
 
     public void postSend(FileParser fp) throws Exception {

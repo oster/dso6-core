@@ -34,6 +34,15 @@
 package org.libresource.so6.core.engine;
 
 
+import java.io.File;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Logger;
+
 import jlibdiff.Diff;
 import jlibdiff.Hunk;
 import jlibdiff.HunkAdd;
@@ -41,7 +50,6 @@ import jlibdiff.HunkChange;
 import jlibdiff.HunkDel;
 
 import org.libresource.so6.core.FileLockedException;
-import org.libresource.so6.core.StateMonitoring;
 import org.libresource.so6.core.Workspace;
 import org.libresource.so6.core.WsConnection;
 import org.libresource.so6.core.command.Command;
@@ -54,25 +62,14 @@ import org.libresource.so6.core.command.text.AddTxtFile;
 import org.libresource.so6.core.command.text.DelBlock;
 import org.libresource.so6.core.engine.util.FileUtils;
 
-import java.io.File;
-import java.io.IOException;
-
-import java.sql.SQLException;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.logging.Logger;
-
 
 /**
  * FileParser : Detect file modification...
  *
- * Responsablity : - This is a simple modification detector for a file system.
+ * Responsibility : - This is a simple modification detector for a file system.
  * computes the vector of operations that make the transition from the last
  * state (stored in a local db) to the actual state. - FileParser has the
- * responsability to manage DBMarks (update it during synchronization action)
+ * Responsibility to manage DBMarks (update it during synchronization action)
  *
  * Collaboration: - give its operation to the operation integrator component.
  *
@@ -83,7 +80,6 @@ public class FileParser {
     private FilterIgnoreFile fif;
     private int walked = 0;
     private long size = 0;
-    private ArrayList walkedlist = new ArrayList();
     private WsConnection workspace;
     private int nbFileToWalk;
 
@@ -108,7 +104,6 @@ public class FileParser {
         String p2 = ((new File(path))).getAbsolutePath();
         assert (p2.startsWith(p1)) : "(" + p2 + ") does not start with (" + p1 + ")";
 
-        //System.out.println("ws="+p1 + "| path="+p2+"|");
         // +1 to remove the first / of the command path
         if (p1.equals(p2)) {
             return "";
@@ -127,14 +122,14 @@ public class FileParser {
         ws.getDBType().updateFromWalk(ws.getPath(), ws.getXmlAutoDetection());
         nbFileToWalk = ws.getDBType().getNbEntry();
 
-        ArrayList walkedlist = new ArrayList();
+        List<String> walkedlist = new ArrayList<String>();
         fif = new FilterIgnoreFile(ws);
         StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
         StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "Check local operation");
 
         File root = new File(ws.getPath());
 
-        // check il important data is locked
+        // check if important data is locked
         File[] children = root.listFiles();
 
         if (FileUtils.isLocked(ws.getRefCopyPath())) {
@@ -156,7 +151,7 @@ public class FileParser {
         StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
         StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "Detecting local remove");
 
-        ArrayList removed = detectRemoved(walkedlist);
+        List<String> removed = detectRemoved(walkedlist);
 
         for (int i = 0; i < removed.size(); i++) {
             Command cmd = new Remove((String) removed.get(i), ws);
@@ -167,9 +162,9 @@ public class FileParser {
         StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
     }
 
-    private ArrayList detectRemoved(ArrayList l) {
-        ArrayList result = new ArrayList();
-        Iterator li = ws.getRefCopy().getElements();
+    private List<String> detectRemoved(List<String> l) {
+        List<String> result = new ArrayList<String>();
+        Iterator<String> li = ws.getRefCopy().getElements();
         int to = ws.getRefCopy().getDBType().getNbEntry();
         int current = 0;
 
@@ -226,19 +221,17 @@ public class FileParser {
             Diff d = new Diff();
             d.diffFile(lastFile, newFile);
 
-            for (Iterator i = d.iterator(); i.hasNext();) {
-                Hunk h = (Hunk) i.next();
+            for (Iterator<Hunk> i = d.iterator(); i.hasNext();) {
+                Hunk h = i.next();
 
                 if (h instanceof HunkAdd) {
-                    HunkAdd ha = (HunkAdd) h;
                     Command cmd = new AddBlock(path, ws, (HunkAdd) h);
                     log.add(cmd);
                 } else if (h instanceof HunkDel) {
-                    HunkDel hd = (HunkDel) h;
                     Command cmd = new DelBlock(path, ws, (HunkDel) h);
                     log.add(cmd);
                 } else if (h instanceof HunkChange) {
-                    throw new RuntimeException("HunkChange might not be detected, check the jlibdiff configuration");
+                    throw new RuntimeException("HunkChange should not be detected, check the jlibdiff configuration");
 
                     // 					HunkChange hc = (HunkChange) h;
                     // 					Logger.getLogger("fileparser.log").info(
@@ -260,7 +253,7 @@ public class FileParser {
     } // traverse the file system starting from f // and build the vector of
 
     // operations
-    private void walk(File f, ArrayList wl, OpVector log)
+    private void walk(File f, List<String> wl, OpVector log)
         throws java.io.IOException, SQLException, Exception {
         if (!(f.exists())) {
             throw new java.io.IOException(f.getPath() + " not exists");
@@ -293,11 +286,7 @@ public class FileParser {
 
         if ((!filePreviouslySynchronized) || typeHasChangedDirToFile || fileTypeHasChanged) { // new
 
-            // file...
-            // or
-            // type
-            // has
-            // changed
+            // file... or type has changed
             if (filePreviouslySynchronized && (typeHasChangedDirToFile || fileTypeHasChanged)) { // Type
 
                 // has

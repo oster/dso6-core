@@ -39,9 +39,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-
+import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Vector;
+import java.util.List;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -57,10 +57,10 @@ public class ZipUtil {
         File sourceZipFile = new File(inFileName);
         File unzipDestinationDirectory = new File(destinationDirectory);
         ZipFile zipFile = new ZipFile(sourceZipFile, ZipFile.OPEN_READ);
-        Enumeration zipFileEntries = zipFile.entries();
+        Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
 
         while (zipFileEntries.hasMoreElements()) {
-            ZipEntry entry = (ZipEntry) zipFileEntries.nextElement();
+            ZipEntry entry = zipFileEntries.nextElement();
             String currentEntry = entry.getName();
             File destFile = new File(unzipDestinationDirectory, currentEntry);
             File destinationParent = destFile.getParentFile();
@@ -115,11 +115,11 @@ public class ZipUtil {
         }
     }
 
-    private static Object[] getContent(String dir) {
-        Vector v = new Vector();
+    private static String[] getContent(String dir) {
+        List<String> v = new ArrayList<String>();
         FileUtils.walk(dir, v);
 
-        return v.toArray();
+        return v.toArray(new String[v.size()]);
     }
 
     public static void zip(ZipOutputStream zos, String dir)
@@ -128,15 +128,15 @@ public class ZipUtil {
         zos.setMethod(ZipOutputStream.DEFLATED); //indicate deflated
         zos.setLevel(Deflater.DEFAULT_COMPRESSION);
 
-        Object[] contents = getContent(d.getPath());
+        String[] contents = getContent(d.getPath());
 
         for (int i = 0; i < contents.length; i++) {
-            if (d.getPath().equals((String) contents[i])) {
+            if (d.getPath().equals(contents[i])) {
                 continue;
             }
 
-            String name = ((String) contents[i]).substring(d.getPath().length() + 1);
-            File fin = new File((String) contents[i]);
+            String name = contents[i].substring(d.getPath().length() + 1);
+            File fin = new File(contents[i]);
 
             if (fin.isDirectory()) {
                 ZipEntry ze = new ZipEntry(name + '/');

@@ -33,15 +33,17 @@
  */
 package org.libresource.so6.core.engine.util;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 
 /**
@@ -55,16 +57,16 @@ public class InfoPatchHandler extends DefaultHandler {
     private String className;
     private String path;
 
-    // information to retreive
+    // information to retrieve
     private long fromTicket = -1;
     private long toTicket = -1;
     private String wsName;
     private String comment = "";
-    private Hashtable filesIndex;
+    private Map<String, List<String>> filesIndex;
     private long nbLine;
 
     public InfoPatchHandler() {
-        filesIndex = new Hashtable();
+        filesIndex = new Hashtable<String, List<String>>();
         nbLine = 0;
     }
 
@@ -84,7 +86,7 @@ public class InfoPatchHandler extends DefaultHandler {
         return comment;
     }
 
-    public Hashtable getFileIndex() {
+    public Map<String, List<String>> getFileIndex() {
         return filesIndex;
     }
 
@@ -92,14 +94,16 @@ public class InfoPatchHandler extends DefaultHandler {
         return nbLine;
     }
 
-    public void characters(char[] buff, int offset, int len)
+    @Override
+	public void characters(char[] buff, int offset, int len)
         throws SAXException {
         if (INFO_TAG.indexOf(tag) != -1) {
             buffer.append(buff, offset, len);
         }
     }
 
-    public void endElement(String namespaceuri, String sname, String qname)
+    @Override
+	public void endElement(String namespaceuri, String sname, String qname)
         throws SAXException {
         if (qname.equals("name")) {
             try {
@@ -140,19 +144,20 @@ public class InfoPatchHandler extends DefaultHandler {
                 // TODO: handle exception
             }
 
-            ArrayList opList = (ArrayList) filesIndex.get(path);
+            List<String> opList = filesIndex.get(path);
 
             if (opList != null) {
                 opList.add(className);
             } else {
-                opList = new ArrayList();
+                opList = new ArrayList<String>();
                 opList.add(className);
                 filesIndex.put(path, opList);
             }
         }
     }
 
-    public void startElement(String namespaceuri, String sname, String qname, Attributes attr)
+    @Override
+	public void startElement(String namespaceuri, String sname, String qname, Attributes attr)
         throws SAXException {
         tag = qname;
         buffer = new StringBuffer();

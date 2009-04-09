@@ -33,13 +33,6 @@
  */
 package org.libresource.so6.core.command.text;
 
-import jlibdiff.HunkDel;
-
-import org.libresource.so6.core.WsConnection;
-import org.libresource.so6.core.engine.DBType;
-import org.libresource.so6.core.engine.util.Base64;
-import org.libresource.so6.core.engine.util.FileUtils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -49,42 +42,45 @@ import java.io.LineNumberReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
-
 import java.nio.charset.Charset;
-
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
+import jlibdiff.HunkDel;
 
-//public class DelBlock extends UpdateTextFile {
+import org.libresource.so6.core.WsConnection;
+import org.libresource.so6.core.engine.DBType;
+import org.libresource.so6.core.engine.util.Base64;
+import org.libresource.so6.core.engine.util.FileUtils;
+
 public class DelBlock extends UpdateTextFile {
     private static final long serialVersionUID = 3;
     private int deletePoint = -1;
-    private ArrayList linesToRemove = null;
+    private List<String> linesToRemove = null;
 
-    public DelBlock(long ticket, String path, String wsName, long time, boolean conflict, int deletePoint, ArrayList linesToRemove) {
+    public DelBlock(long ticket, String path, String wsName, long time, boolean conflict, int deletePoint, List<String> linesToRemove) {
         super(ticket, path, wsName, time, conflict, null);
         this.deletePoint = deletePoint;
         this.linesToRemove = linesToRemove;
     }
 
-    public DelBlock(String path, WsConnection ws, int deletePoint, Collection c) {
+    public DelBlock(String path, WsConnection ws, int deletePoint, List<String> c) {
         super(path, ws);
         this.deletePoint = deletePoint;
-        this.linesToRemove = new ArrayList(c);
+        this.linesToRemove = new ArrayList<String>(c);
     }
 
     public DelBlock(String path, WsConnection ws, HunkDel hd) {
         super(path, ws);
         this.deletePoint = hd.getLD2(); // + 1;
-        this.linesToRemove = new ArrayList(hd.getOldContent());
+        this.linesToRemove = new ArrayList<String>(hd.getOldContent());
     }
 
     public DelBlock(AddBlock a, WsConnection ws) {
         super(a.getPath(), ws);
         this.deletePoint = a.getInsertPoint();
-        this.linesToRemove = new ArrayList(a.getContent());
+        this.linesToRemove = new ArrayList<String>(a.getContent());
     }
 
     public int getSize() {
@@ -115,21 +111,21 @@ public class DelBlock extends UpdateTextFile {
         linesToRemove.subList(t - x, t).clear();
     }
 
-    public void setOldContent(Collection c) {
-        this.linesToRemove = new ArrayList(c);
+    public void setOldContent(List<String> c) {
+        this.linesToRemove = new ArrayList<String>(c);
     }
 
-    public Collection getOldContent() {
+    public List<String> getOldContent() {
         return this.linesToRemove;
     }
 
-    public void execute(String dir, DBType dbt) throws Exception {
-        //for(Iterator i =linesToRemove.iterator();i.hasNext();)
-        //    System.out.println(i.next());
+    @Override
+	public void execute(String dir, DBType dbt) throws Exception {
         doTheJobOnFile(dir + File.separator + path);
     }
 
-    public void doTheJobOnFile(String path) throws Exception {
+    @Override
+	public void doTheJobOnFile(String path) throws Exception {
         File tmpFile = File.createTempFile("DelBlock", null);
         File f = new File(path);
         InputStreamReader isr = new InputStreamReader(new FileInputStream(f), Charset.forName(System.getProperty("file.encoding")));
@@ -137,8 +133,6 @@ public class DelBlock extends UpdateTextFile {
         OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.forName(System.getProperty("file.encoding")));
         PrintWriter output = new PrintWriter(osw);
 
-        //LineNumberReader input = new LineNumberReader(new FileReader(f));
-        //PrintWriter output = new PrintWriter(new FileWriter(tmpFile));
         String tmpLine;
 
         if (f.length() != 0) {
@@ -174,7 +168,8 @@ public class DelBlock extends UpdateTextFile {
         }
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "DelBlock(" + path + "," + getDeletePoint() + "," + getSize() + ")";
     }
 
@@ -182,7 +177,8 @@ public class DelBlock extends UpdateTextFile {
         return "DelBlock(" + path + "," + getDeletePoint() + "," + getSize() + "," + getOldContent() + ")";
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o instanceof DelBlock) {
             DelBlock a = (DelBlock) o;
 
@@ -192,12 +188,13 @@ public class DelBlock extends UpdateTextFile {
         }
     }
 
-    public void toXML(Writer osw) throws IOException {
+    @Override
+	public void toXML(Writer osw) throws IOException {
         super.toXML(osw);
         osw.write("<deletepoint>" + deletePoint + "</deletepoint>");
         osw.write("<linesToRemove>");
 
-        Iterator it = linesToRemove.iterator();
+        Iterator<String> it = linesToRemove.iterator();
 
         while (it.hasNext()) {
             String line = (String) it.next();
