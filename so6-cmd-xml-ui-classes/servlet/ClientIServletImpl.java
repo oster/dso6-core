@@ -31,9 +31,16 @@
  * Amadou Dia / Artenum-IUP Blois
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
-package org.libresource.so6.core.client;
+package org.libresource.so6.core.client.servlet;
 
 import org.libresource.so6.core.StateMonitoring;
+import org.libresource.so6.core.client.AuthenticationException;
+import org.libresource.so6.core.client.ConnectionException;
+import org.libresource.so6.core.client.InvalidTicketException;
+import org.libresource.so6.core.client.LocalException;
+import org.libresource.so6.core.client.PatchNotFoundException;
+import org.libresource.so6.core.client.ServerException;
+import org.libresource.so6.core.client.UnableToContactServerException;
 import org.libresource.so6.core.engine.util.MonitoredInputStream;
 import org.libresource.so6.core.net.DataflowClientI;
 

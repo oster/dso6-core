@@ -33,7 +33,6 @@
  */
 package org.libresource.so6.core.engine;
 
-import fr.loria.ecoo.so6.xml.xydiff.XyDiff;
 
 import jlibdiff.Diff;
 import jlibdiff.Hunk;
@@ -53,9 +52,7 @@ import org.libresource.so6.core.command.fs.UpdateBinaryFile;
 import org.libresource.so6.core.command.text.AddBlock;
 import org.libresource.so6.core.command.text.AddTxtFile;
 import org.libresource.so6.core.command.text.DelBlock;
-import org.libresource.so6.core.command.xml.AddXmlFile;
 import org.libresource.so6.core.engine.util.FileUtils;
-import org.libresource.so6.core.engine.util.XmlUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -208,6 +205,7 @@ public class FileParser {
         String lastFile = ws.getRefCopy().getPath(path);
         String newFile = ws.getPath() + File.separator + path;
 
+        /* TODO: Reintegrate XML support as a plugin feature?
         if (ws.getRefCopy().getType(path) == DBType.TYPE_FILE_XML) {
             // Manage XML
             XyDiff d = new XyDiff(lastFile, newFile);
@@ -223,6 +221,7 @@ public class FileParser {
 
             //System.out.println("<-- xml cmds");
         } else {
+        */
             // Manage Txt
             Diff d = new Diff();
             d.diffFile(lastFile, newFile);
@@ -254,7 +253,7 @@ public class FileParser {
                     // h).getHunkAdd());
                     // 					log.add(cmd);
                 }
-            }
+           // }
         }
 
         System.gc();
@@ -341,7 +340,7 @@ public class FileParser {
                 ws.getDBType().add(relpath, DBType.TYPE_FILE_TXT);
 
                 break;
-
+            /* TODO: Reintegrate XML support as a plugin feature?
             case DBType.TYPE_FILE_XML:
                 ws.getDBType().add(relpath, DBType.TYPE_FILE_XML);
 
@@ -353,7 +352,7 @@ public class FileParser {
                 log.add(new AddXmlFile(relpath, ws, new File(ws.getAttachFilePath())));
 
                 break;
-
+            */
             default:
                 throw new Exception("unmanaged db type: " + fileType + " file: " + f.getAbsolutePath());
             }

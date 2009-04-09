@@ -36,8 +36,6 @@
  */
 package org.libresource.so6.core.engine;
 
-import fr.loria.ecoo.so6.xml.node.TreeNode;
-import fr.loria.ecoo.so6.xml.util.XmlUtil;
 
 import org.libresource.so6.core.StateMonitoring;
 import org.libresource.so6.core.WsConnection;
@@ -51,12 +49,6 @@ import org.libresource.so6.core.command.fs.UpdateBinaryFile;
 import org.libresource.so6.core.command.text.AddBlock;
 import org.libresource.so6.core.command.text.AddTxtFile;
 import org.libresource.so6.core.command.text.DelBlock;
-import org.libresource.so6.core.command.xml.AddXmlFile;
-import org.libresource.so6.core.command.xml.DeleteAttribute;
-import org.libresource.so6.core.command.xml.DeleteNode;
-import org.libresource.so6.core.command.xml.InsertAttribute;
-import org.libresource.so6.core.command.xml.InsertNode;
-import org.libresource.so6.core.command.xml.UpdateAttribute;
 import org.libresource.so6.core.engine.util.Base64;
 import org.libresource.so6.core.engine.util.FileUtils;
 
@@ -267,12 +259,12 @@ public class PatchFile {
         private Integer deletePoint;
 
         // For xml cmds
-        private String xmlNodePath;
-        private String xmlAttributeName;
-        private String xmlAttributeValue;
-        private String xmlOldAttributeValue;
-        private String attributeName;
-        private TreeNode treeNode;
+        //private String xmlNodePath;
+        //private String xmlAttributeName;
+        //private String xmlAttributeValue;
+        //private String xmlOldAttributeValue;
+        //private String attributeName;
+        //private TreeNode treeNode;
 
         PatchHandler() {
         }
@@ -382,6 +374,8 @@ public class PatchFile {
                     // TODO: handle exception
                 }
             }
+            
+/* TODO: Reintegrate XML support as a plugin feature?
 
             // For XML
             if (qname.equals("treeNode")) {
@@ -427,6 +421,7 @@ public class PatchFile {
                     // TODO Auto-generated catch block
                 }
             }
+*/
 
             // Build real command
             if (qname.equals("command")) {
@@ -462,6 +457,7 @@ public class PatchFile {
                     cmd = new UpdateBinaryFile(ticket, path, wsName, time.longValue(), false, filename);
                 }
 
+/* TODO: Reintegrate XML support as a plugin feature?
                 // XML
                 if (checkCommandType(classname, AddXmlFile.class.getName())) {
                     cmd = new AddXmlFile(ticket, path, wsName, time.longValue(), filename);
@@ -486,7 +482,7 @@ public class PatchFile {
                 if (checkCommandType(classname, UpdateAttribute.class.getName())) {
                     cmd = new UpdateAttribute(ticket, path, wsName, time.longValue(), xmlNodePath, xmlAttributeName, xmlOldAttributeValue, xmlAttributeValue);
                 }
-
+*/
                 if (cmd != null) {
                     doit(cmd);
                     cmd = null;

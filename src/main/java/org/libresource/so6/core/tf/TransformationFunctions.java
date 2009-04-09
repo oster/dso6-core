@@ -41,7 +41,6 @@ import org.libresource.so6.core.command.fs.FsCommand;
 import org.libresource.so6.core.command.fs.Remove;
 import org.libresource.so6.core.command.fs.Rename;
 import org.libresource.so6.core.command.text.UpdateTextFile;
-import org.libresource.so6.core.command.xml.UpdateXmlFile;
 import org.libresource.so6.core.engine.util.ObjectCloner;
 
 import java.lang.reflect.Method;
@@ -61,13 +60,17 @@ public class TransformationFunctions {
     protected WsConnection ws;
     private FileSystemFunctions fsTF;
     private TextFileFunctions txtTF;
-    private XmlFileFunctions xmlTF;
+    /* TODO: Reintegrate XML support as a plugin feature?
+       private XmlFileFunctions xmlTF;
+     */
 
     public TransformationFunctions(WsConnection ws) {
         this.ws = ws;
         this.fsTF = new FileSystemFunctions(ws);
         this.txtTF = new TextFileFunctions(ws);
-        this.xmlTF = new XmlFileFunctions(ws);
+        /* TODO: Reintegrate XML support as a plugin feature?
+		   this.xmlTF = new XmlFileFunctions(ws);
+		*/
     }
 
     /**
@@ -107,13 +110,16 @@ public class TransformationFunctions {
                 } else {
                     return c1;
                 }
-            } else if (c1 instanceof UpdateXmlFile) {
+            } 
+/* TODO: Reintegrate XML support as a plugin feature?
+			 else if (c1 instanceof UpdateXmlFile) {
                 if (c2 instanceof UpdateXmlFile) {
                     return xmlTF.transp((UpdateXmlFile) c1, (UpdateXmlFile) c2);
                 } else {
                     return c1;
                 }
-            } else {
+             }*/ 
+            else {
                 throw new Exception("Unable to find transformation function for:\n " + c1 + " - " + c2);
             }
         } catch (NoSuchMethodException e) {

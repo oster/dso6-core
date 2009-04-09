@@ -92,7 +92,7 @@ public class Workspace {
         File f = new File(wsBasePath + File.separator + SO6PREFIX + File.separator + SO6_WS_FILE);
 
         if (!f.exists()) {
-            throw new IOException("Invalide workspace path (" + wsBasePath + ")");
+            throw new IOException("Invalid workspace path (" + wsBasePath + ")");
         }
     }
 

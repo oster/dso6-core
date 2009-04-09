@@ -35,7 +35,7 @@ package org.libresource.so6.core.client;
 
 public class InvalidTicketException extends Exception {
     public InvalidTicketException() {
-        super("Invalide ticket");
+        super("Invalid ticket");
     }
 
     public InvalidTicketException(String e) {

@@ -31,8 +31,10 @@
  * Amadou Dia / Artenum-IUP Blois
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
-package org.libresource.so6.core.client;
+package org.libresource.so6.core.client.dummy;
 
+import org.libresource.so6.core.client.ClientI;
+import org.libresource.so6.core.client.LocalException;
 import org.libresource.so6.core.compress.CompressUtil;
 import org.libresource.so6.core.engine.OpVectorFsImpl;
 import org.libresource.so6.core.engine.PatchFile;

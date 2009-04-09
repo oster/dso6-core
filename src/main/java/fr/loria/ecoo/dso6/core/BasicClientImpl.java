@@ -1,4 +1,4 @@
-package org.libresource.so6.core.client;
+package fr.loria.ecoo.dso6.core;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,10 +19,20 @@ import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.libresource.so6.core.client.AuthenticationException;
+import org.libresource.so6.core.client.ClientI;
+import org.libresource.so6.core.client.ConnectionException;
+import org.libresource.so6.core.client.InvalidTicketException;
+import org.libresource.so6.core.client.LocalException;
+import org.libresource.so6.core.client.PatchNotFoundException;
+import org.libresource.so6.core.client.ServerException;
+import org.libresource.so6.core.client.UnableToContactServerException;
 
-public class ClientBasicHTTPImpl implements ClientI {
+public class BasicClientImpl implements ClientI {
 
-	private final static String SO6_SERVICE_URL = "so6.service.url";
+	public final static String DSO6_COMMIT_CAPABILITY = "dso6.commit.capability";
+	public final static String DSO6_UPDATE_CAPABILITY = "dso6.update.capability";
+	public final static String DSO6_ENDPOINT_URI = "dso6.endpoint.uri";
 	// private final static String SO6_DOWNLOAD_DIR = "so6.download.dir";
 	private final static String DEFAULT_BINEXT = "class pdf ps eps exe zip jar gif jpg png";
 	// private final static String PROP_FILE = "so6.properties";
@@ -35,24 +45,17 @@ public class ClientBasicHTTPImpl implements ClientI {
 	private final static String ALL = "all";
 
 	private DefaultHttpClient httpclient;
-	private String serviceURI;
+	private String commitServiceURI;
+	private String updateServiceURI;
 	private String queueId;
 
-	public ClientBasicHTTPImpl() {
+	public BasicClientImpl(Properties props) throws Exception {
+		this.commitServiceURI = props.getProperty(DSO6_ENDPOINT_URI) + props.getProperty(DSO6_COMMIT_CAPABILITY);
+		this.updateServiceURI = props.getProperty(DSO6_ENDPOINT_URI) + props.getProperty(DSO6_UPDATE_CAPABILITY);
+		this.queueId = props.getProperty(ClientI.SO6_QUEUE_ID);
 
-		this.serviceURI = "http://localhost:8888/so6-doodle";
-		this.queueId = "SRX27";
-
-		this.httpclient = new DefaultHttpClient();
-
-	}
-
-	public ClientBasicHTTPImpl(Properties props) throws Exception {
-		this.serviceURI = props.getProperty(SO6_SERVICE_URL);
-		this.queueId = props.getProperty(SO6_QUEUE_ID);
-
-		if ((this.serviceURI == null) || (this.queueId == null)) {
-			throw new RuntimeException("Properties are missing for ClientBasicHTTPImpl initialisation");
+		if (this.queueId == null) {
+			throw new RuntimeException("Properties are missing for BasicClientImpl initialisation");
 		}
 
 		this.httpclient = new DefaultHttpClient();
@@ -61,7 +64,7 @@ public class ClientBasicHTTPImpl implements ClientI {
 	@Override
 	public long getLastTicket() throws AuthenticationException, UnableToContactServerException, ServerException,
 			ConnectionException, LocalException {
-		String endPoint = this.serviceURI + "/" + QUEUES + "/" + this.queueId + "/" + TICKET;
+		String endPoint = this.updateServiceURI + "/" + TICKET;
 		HttpGet method = new HttpGet(endPoint);
 
 		try {
@@ -84,7 +87,7 @@ public class ClientBasicHTTPImpl implements ClientI {
 	@Override
 	public long[][] listPatch() throws AuthenticationException, UnableToContactServerException, ServerException,
 			ConnectionException, LocalException {
-		String endPoint = this.serviceURI + "/" + QUEUES + "/" + this.queueId + "/" + PATCHES + "/" + ALL;
+		String endPoint = this.updateServiceURI + "/" + PATCHES + "/" + ALL;
 		HttpGet method = new HttpGet(endPoint);
 		try {
 			HttpResponse response = httpclient.execute(method);
@@ -121,19 +124,24 @@ public class ClientBasicHTTPImpl implements ClientI {
 			throws AuthenticationException, InvalidTicketException, UnableToContactServerException, ServerException,
 			ConnectionException, LocalException {
 		String ticketCode = ticket + "." + lastTicket;
-		String endPoint = this.serviceURI + "/" + QUEUES + "/" + this.queueId + "/" + PATCHES + "/" + ticketCode;
+		String endPoint = this.commitServiceURI + "/" + PATCHES + "/" + ticketCode;
 		HttpPost method = new HttpPost(endPoint);
 
 		try {
-			MultipartEntity entity = new MultipartEntity();			
+			MultipartEntity entity = new MultipartEntity();
 			entity.addPart("fromTicket", new StringBody(Long.toString(ticket), Charset.forName("UTF-8")));
 			entity.addPart("toTicket", new StringBody(Long.toString(lastTicket), Charset.forName("UTF-8")));
 			entity.addPart("validate", new StringBody(Boolean.toString(validate), Charset.forName("UTF-8")));
 			FileBody fileBody = new FileBody(new File(patchFile));
-			entity.addPart("file", fileBody);
+			entity.addPart("patchfile", fileBody);
 			method.setEntity(entity);
 			HttpResponse response = httpclient.execute(method);
-			if (response.getStatusLine().getStatusCode() != 200) {
+			switch (response.getStatusLine().getStatusCode()) {
+			case 200:
+				break;
+			case 404:
+				throw new InvalidTicketException(response.getStatusLine().getReasonPhrase());
+			default:
 				throw new ServerException(response.getStatusLine().getReasonPhrase());
 			}
 		} catch (ClientProtocolException e) {
@@ -153,7 +161,7 @@ public class ClientBasicHTTPImpl implements ClientI {
 	public String getPatch(long fromTicket, long toTicket) throws AuthenticationException, PatchNotFoundException,
 			UnableToContactServerException, ServerException, ConnectionException, LocalException {
 		String ticketCode = (toTicket == -1) ? fromTicket + "" : fromTicket + "." + toTicket;
-		String endPoint = this.serviceURI + "/" + QUEUES + "/" + this.queueId + "/" + PATCHES + "/" + ticketCode;
+		String endPoint = this.updateServiceURI + "/" + PATCHES + "/" + ticketCode;
 		HttpGet method = new HttpGet(endPoint);
 		try {
 			HttpResponse response = httpclient.execute(method);

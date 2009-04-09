@@ -5,18 +5,22 @@ import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.libresource.so6.core.client.ClientBasicHTTPImpl;
 import org.libresource.so6.core.client.ClientI;
+
+import fr.loria.ecoo.dso6.core.BasicClientImpl;
 
 public class BasicHTTPTest {
 
 	private ClientI client;
 
+	
+	// TODO: write the endpoint uri in the property file during checkout
+	// TODO: write sendPatch method
+	
 	@Before
 	public void setUp() {
-		client = new ClientBasicHTTPImpl();
+		//client = new BasicClientImpl();
 	}
-
 	@Test
 	public void testGetTicket() throws Exception {
 		assertTrue(client.getLastTicket() == 1);
@@ -66,5 +70,5 @@ public class BasicHTTPTest {
 		}
 		b.append(" ]");
 		return b.toString();	
-	}	
+	}		
 }

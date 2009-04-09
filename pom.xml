@@ -94,6 +94,15 @@
 	
   	<build>
     	<plugins>
+			<plugin>
+        		<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<!--<version>2.0.2</version>-->
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>	
       		<plugin>
         		<groupId>org.apache.maven.plugins</groupId>
         		<artifactId>maven-surefire-plugin</artifactId>
@@ -101,6 +110,7 @@
           			<testFailureIgnore>true</testFailureIgnore>
         		</configuration>
       		</plugin>
+<!--
 		 	<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
@@ -117,7 +127,7 @@
 					<storepass>tagada</storepass>
 					<signedjar>${project.build.directory}/signed/${project.build.finalName}.jar</signedjar>
 					<verify>true</verify>
-<!--
+
 		        	<archive>
 		          		<manifest>
 		            		<mainClass>org.libresource.so6.ui.CommitMain</mainClass>
@@ -128,8 +138,72 @@
 		            		<url>${pom.url}</url>
 		          		</manifestEntries>
 		        	</archive>
--->		    	</configuration>
+		    	</configuration>
 			</plugin>
+-->			
+			<plugin>
+			        <groupId>org.codehaus.mojo.webstart</groupId>
+			        <artifactId>webstart-maven-plugin</artifactId>
+			        <executions>
+			           <execution>
+			              <goals>
+			                 <goal>jnlp</goal> <!-- use jnlp, jnlp-inline or jnlp-single as appropriate -->
+			              </goals>
+			           </execution>
+			        </executions>
+			        <configuration>
+
+			           <excludeTransitive>false</excludeTransitive>
+			           <libPath>lib</libPath>
+<!--
+			           <dependencies>
+			             <includes>
+			                <include>commons-logging:commons-logging</include>
+			                <include>commons-cli:commons-cli</include>
+			             </includes>
+			             <excludes>
+			                <exclude></exclude>
+			             <excludes>
+			           </dependencies>
+-->
+			           <!-- JNLP generation -->
+			           <jnlp>
+			             <!-- default values -->
+			             <!--inputTemplateResourcePath>${project.basedir}</inputTemplateResourcePath-->
+			             <!--inputTemplate>src/main/jnlp/template.vm</inputTemplate--> <!-- relative to inputTemplateResourcePath -->
+			             <outputFile>app.jnlp</outputFile> <!-- defaults to launch.jnlp -->
+			             <mainClass>fr.loria.ecoo.dso6.core.Update</mainClass>
+			           </jnlp>
+
+			           <sign>
+			             <keystore>${project.basedir}/dso6-keystore</keystore>
+			             <keypass>tagada</keypass>  
+			             <storepass>tagada</storepass>
+			             <alias>oster</alias>
+			             <verify>true</verify> 
+
+			             <!--validity>fillme</validity-->
+
+			             <!-- only required for generating the keystore -->
+			             <!--dnameCn>fillme</dnameCn>
+			             <dnameOu>fillme</dnameOu>
+			             <dnameO>fillme</dnameO>
+			             <dnameL>fillme</dnameL>
+			             <dnameSt>fillme</dnameSt>
+			             <dnameC>fillme</dnameC-->
+
+			             <keystoreConfig>
+			               <delete>false</delete>
+			               <gen>false</gen>
+			             </keystoreConfig>
+			           </sign>
+
+			           <pack200>true</pack200>
+			           <gzip>true</gzip>
+			           <outputJarVersions>true</outputJarVersions>
+			           <!--<verbose>true</verbose>-->
+			        </configuration>
+			      </plugin>			
     	</plugins>
   	</build>
 	

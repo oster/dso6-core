@@ -40,8 +40,6 @@ import org.libresource.so6.core.command.fs.AddDir;
 import org.libresource.so6.core.command.fs.Remove;
 import org.libresource.so6.core.command.fs.UpdateBinaryFile;
 import org.libresource.so6.core.command.text.AddTxtFile;
-import org.libresource.so6.core.command.xml.AddXmlFile;
-import org.libresource.so6.core.compress.CompressUtil;
 import org.libresource.so6.core.engine.DBType;
 import org.libresource.so6.core.engine.FileParser;
 import org.libresource.so6.core.engine.FilterIgnoreFile;
@@ -99,95 +97,95 @@ public class WsConnection implements java.io.Serializable {
     public static final String SO6_LAST_COMMIT_PATCH_FILE = "lastPatch.commit";
 
     /**
-     * Property used in the SO6_WSC_FILE property file to represente the
-     * worskpace base path
+     * Property used in the SO6_WSC_FILE property file to represent the
+     * workspace base path
      */
     public static final String PATH = "so6.path";
 
     /**
-     * Property used in the SO6_WSC_FILE property file to represente the data
+     * Property used in the SO6_WSC_FILE property file to represent the data
      * path of that connection
      */
     public static final String DATAPATH = "so6.connection.path";
 
     /**
-     * Property used in the SO6_WSC_FILE property file to represente the name of
+     * Property used in the SO6_WSC_FILE property file to represent the name of
      * the concrete class of the ClientI interface that need to be used for that
      * connection
      */
     public static final String SYNC_CLIENT_NAME = "so6.clienti.name";
 
     /**
-     * Property used in the SO6_WSC_FILE property file to represente the name of
+     * Property used in the SO6_WSC_FILE property file to represent the name of
      * that connection in order to know who did what?
      */
     public static final String WS_NAME = "so6.wsc.name";
 
     /**
-     * Property used in the SO6_WSC_FILE propertie file is use to set the XML
+     * Property used in the SO6_WSC_FILE properties file is use to set the XML
      * merge (true/false)
      */
     public static final String XML_AUTO_DETECTION = "so6.xml.autodetect";
 
     /**
-     * Property used in the SO6_WSC_FILE property file to represente the current
+     * Property used in the SO6_WSC_FILE property file to represent the current
      * corrupted state
      */
     public static final String CORRUPTION_STATE = "so6.corruption.state";
 
     /**
-     * Property used in the SO6_WSC_FILE property file to represente the last
+     * Property used in the SO6_WSC_FILE property file to represent the last
      * integrated ticket before any corruption
      */
     public static final String LAST_TICKET_BEFORE_CORRUPTION = "so6.last.ticket.before.corruption";
 
     /**
-     * Property used in the SO6_WSC_FILE property file to represente the list of
+     * Property used in the SO6_WSC_FILE property file to represent the list of
      * the binary extension
      */
     public static final String LAST_BIN_EXT = "so6.binary.ext";
 
-    /** Constant for the corruption property : WsConnection not corrupted */
+    /** Constant for the corruption property: WsConnection not corrupted */
     public static final int NO_CORRUPTION = -1;
 
     /**
-     * Constant for the corruption property : WsConnection corrupted while
+     * Constant for the corruption property: WsConnection corrupted while
      * patching local copy
      */
     public static final int UPDATE_CORRUPTION_PATCH_LOCAL_COPY = 1;
 
     /**
-     * Constant for the corruption property : WsConnection corrupted while
+     * Constant for the corruption property: WsConnection corrupted while
      * patching the local reference copy after an update
      */
     public static final int UPDATE_CORRUPTION_PATCH_REF_COPY = 2;
 
     /**
-     * Constant for the corruption property : WsConnection corrupted while
+     * Constant for the corruption property: WsConnection corrupted while
      * saving patch in the applied patch directory after an update
      */
     public static final int UPDATE_CORRUPTION_SAVE_PATCH = 3;
 
     /**
-     * Constant for the corruption property : WsConnection corrupted while
+     * Constant for the corruption property: WsConnection corrupted while
      * removing the applied patch in the received directory after an update
      */
     public static final int UPDATE_CORRUPTION_REMOVE_PATCH = 4;
 
     /**
-     * Constant for the corruption property : WsConnection corrupted while
+     * Constant for the corruption property: WsConnection corrupted while
      * patching the local reference copy after a commit
      */
     public static final int COMMIT_CORRUPTION_PATCH_REF_COPY = 11;
 
     /**
-     * Constant for the corruption property : WsConnection corrupted while
+     * Constant for the corruption property: WsConnection corrupted while
      * saving patch in the applied patch directory after a commit
      */
     public static final int COMMIT_CORRUPTION_SAVE_PATCH = 12;
 
     /**
-     * Constant for the corruption property : WsConnection corrupted while
+     * Constant for the corruption property: WsConnection corrupted while
      * updating the received ticket
      */
     public static final int COMMIT_CORRUPTION_UPDATE_RECEIVED_TICKET = 13;
@@ -271,7 +269,7 @@ public class WsConnection implements java.io.Serializable {
 
     /**
      * Return the base path where the local command are temporary stored when
-     * they are computed from the diff beetwen the refcopy and the local copy.
+     * they are computed from the differences between the refcopy and the local copy.
      *
      * @return path of the directory
      */
@@ -280,7 +278,7 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * Return the base path where the attachement of the local command are
+     * Return the base path where the attachment of the local command are
      * temporary stored.
      *
      * @return path of the directory
@@ -317,7 +315,7 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * The current path of the attachement of the merged commands.
+     * The current path of the attachment of the merged commands.
      *
      * @return path of the directory
      */
@@ -336,7 +334,7 @@ public class WsConnection implements java.io.Serializable {
 
     /**
      * Load meta data from the filesystem. (Need to be used when concurrent
-     * update on the file systeme.)
+     * update on the filesystem.)
      *
      * @param path
      *            The path of the workspace connection property file
@@ -384,7 +382,7 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * Automaticaly instantiate the class specified for property
+     * Automatically instantiate the class specified for property
      * <code>SYNC_CLIENT_NAME<code>
      * with the default constructor that take the <code>SO6_WSC_FILE<code> property file as parameter.
      *
@@ -464,7 +462,7 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * Reload the binary extention definition from the ClientI interface.
+     * Reload the binary extension definition from the ClientI interface.
      */
     public void updateBinExt() throws Exception {
         String binExt = getClient().getBinExt();
@@ -474,8 +472,8 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * Set the ClientI for that connection and update the binary extention. This
-     * methode won't update the property file. This is just for the current run
+     * Set the ClientI for that connection and update the binary extension. This
+     * method will not update the property file. This is just for the current run
      * time.
      *
      * @param clientI
@@ -496,7 +494,7 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * Automaticaly update and commit on the current connection.
+     * Automatically update and commit on the current connection.
      *
      * @param comment
      *            The comment of the commit.
@@ -509,7 +507,7 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * Automaticaly update and commit on the current connection. Without any
+     * Automatically update and commit on the current connection. Without any
      * comment.
      *
      * @throws Exception
@@ -519,7 +517,7 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * This methode is used to simulate actions. It means that the local data
+     * This method is used to simulate actions. It means that the local data
      * won't be modified, but a report will be made in the specified directory
      * in order to explain what would happen if it wasn't a simulation.
      *
@@ -770,7 +768,7 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * Download the remote patch without applying them localy.
+     * Download the remote patch without applying them locally.
      *
      * @throws Exception
      */
@@ -837,7 +835,7 @@ public class WsConnection implements java.io.Serializable {
     /**
      * Restore the local corrupted connection
      * <p>
-     * If the connection is not corrupted, throw an Excpetion
+     * If the connection is not corrupted, throw an Exception
      *
      * @throws Exception
      */
@@ -1014,7 +1012,7 @@ public class WsConnection implements java.io.Serializable {
     }
 
     /**
-     * Methode called by the MergePatchHandler
+     * Method called by the MergePatchHandler
      *
      * @param cmd
      * @param local
@@ -1272,14 +1270,14 @@ public class WsConnection implements java.io.Serializable {
                 ops.add(new AddTxtFile(relativePath, this, getRefCopyPath() + "/" + relativePath));
 
                 break;
-
+ /* TODO: Reintegrate XML support as a plugin feature?
             case DBType.TYPE_FILE_XML:
 
                 // XmlUtil.normalizeDocument(newFile);
                 ops.add(new AddXmlFile(relativePath, this, getRefCopyPath() + "/" + relativePath));
 
                 break;
-
+*/
             default:
 
                 // nothing
@@ -1357,6 +1355,7 @@ public class WsConnection implements java.io.Serializable {
         return patchToDo.getPath();
     }
 
+    /*
     public void compressLocalHistory(long from, long to)
         throws Exception {
         StateMonitoring.getInstance().setXMLMonitoringStartAction("COMPRESS");
@@ -1413,4 +1412,5 @@ public class WsConnection implements java.io.Serializable {
         StateMonitoring.getInstance().setXMLMonitoringComment(true, "Compress process done");
         StateMonitoring.getInstance().setXMLMonitoringEndAction("COMPRESS");
     }
+	*/
 }
