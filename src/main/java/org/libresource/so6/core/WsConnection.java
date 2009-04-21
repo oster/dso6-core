@@ -45,7 +45,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Properties;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import org.libresource.so6.core.client.ClientI;
@@ -63,7 +62,6 @@ import org.libresource.so6.core.engine.PatchRepository;
 import org.libresource.so6.core.engine.RefCopy;
 import org.libresource.so6.core.engine.util.Base64;
 import org.libresource.so6.core.engine.util.FileUtils;
-import org.libresource.so6.core.engine.util.ObjectCloner;
 import org.libresource.so6.core.report.CVSReportMaker;
 import org.libresource.so6.core.tf.TransformationFunctions;
 

@@ -50,6 +50,7 @@ import jlibdiff.HunkChange;
 import jlibdiff.HunkDel;
 
 import org.libresource.so6.core.FileLockedException;
+import org.libresource.so6.core.StateMonitoring;
 import org.libresource.so6.core.Workspace;
 import org.libresource.so6.core.WsConnection;
 import org.libresource.so6.core.command.Command;

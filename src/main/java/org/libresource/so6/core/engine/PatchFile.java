@@ -51,6 +51,7 @@ import java.util.logging.Logger;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.libresource.so6.core.StateMonitoring;
 import org.libresource.so6.core.WsConnection;
 import org.libresource.so6.core.command.Command;
 import org.libresource.so6.core.command.NeutralCommand;
@@ -487,7 +488,7 @@ public class PatchFile {
                     cmd = null;
                     alist = null;
                 } else {
-                    throw new RuntimeException("Class " + classname + " unmanaged");
+                    throw new RuntimeException("Class " + className + " unmanaged");
                 }
             }
         }
