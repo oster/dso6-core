@@ -33,7 +33,7 @@
  */
 package org.libresource.so6.core.test.util;
 
-import org.libresource.so6.core.StateMonitoring;
+import org.libresource.so6.core.ApplicationStatus;
 import org.libresource.so6.core.Workspace;
 import org.libresource.so6.core.WsConnection;
 import org.libresource.so6.core.client.ClientI;
@@ -130,7 +130,6 @@ public class TestUtil {
         return ws;
     }
 
-    // -------------------------------------------------------------
     public static class UpdateThread extends Thread {
         private WsConnection ws;
 
@@ -139,7 +138,8 @@ public class TestUtil {
             setPriority(Thread.MIN_PRIORITY);
         }
 
-        public void run() {
+        @Override
+		public void run() {
             try {
                 ws.update();
             } catch (Exception e) {
@@ -156,7 +156,8 @@ public class TestUtil {
             setPriority(Thread.MIN_PRIORITY);
         }
 
-        public void run() {
+        @Override
+		public void run() {
             try {
                 ws.commit("with corruption");
             } catch (Exception e) {
@@ -173,11 +174,11 @@ public class TestUtil {
             throws Exception {
             this.thread = thread;
             this.nbPartToSkip = killAfterNCriticalPart;
-            StateMonitoring.getInstance().addObserver(this);
+            ApplicationStatus.getInstance().addObserver(this);
         }
 
-        public void update(Observable arg0, Object arg1) {
-            if (nbPartToSkip < StateMonitoring.getInstance().getCurrentCriticalPartNumber()) {
+        public void update(Observable subject, Object param) {
+            if (nbPartToSkip < ApplicationStatus.getInstance().getCurrentCriticalPhaseNumber()) {
                 thread.stop();
             }
         }

@@ -33,7 +33,6 @@
  */
 package org.libresource.so6.core.engine;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -50,7 +49,7 @@ import jlibdiff.HunkChange;
 import jlibdiff.HunkDel;
 
 import org.libresource.so6.core.FileLockedException;
-import org.libresource.so6.core.StateMonitoring;
+import org.libresource.so6.core.ApplicationStatus;
 import org.libresource.so6.core.Workspace;
 import org.libresource.so6.core.WsConnection;
 import org.libresource.so6.core.command.Command;
@@ -63,326 +62,339 @@ import org.libresource.so6.core.command.text.AddTxtFile;
 import org.libresource.so6.core.command.text.DelBlock;
 import org.libresource.so6.core.engine.util.FileUtils;
 
-
 /**
  * FileParser : Detect file modification...
- *
+ * 
  * Responsibility : - This is a simple modification detector for a file system.
  * computes the vector of operations that make the transition from the last
  * state (stored in a local db) to the actual state. - FileParser has the
  * Responsibility to manage DBMarks (update it during synchronization action)
- *
+ * 
  * Collaboration: - give its operation to the operation integrator component.
- *
+ * 
  * @author molli
  */
 public class FileParser {
-    private WsConnection ws;
-    private FilterIgnoreFile fif;
-    private int walked = 0;
-    private long size = 0;
-    private WsConnection workspace;
-    private int nbFileToWalk;
-
-    public FileParser(WsConnection ws) throws Exception {
-        this.ws = ws;
-
-        String dir = FileUtils.createTmpDir().getPath();
-        File f = new File(dir);
-        f.mkdir();
-    }
-
-    public WsConnection getWorkspace() {
-        return workspace;
-    }
-
-    public void setWorkspace(WsConnection workspace) {
-        this.workspace = workspace;
-    }
-
-    private String getRelPath(String path) {
-        String p1 = (new File(ws.getPath())).getAbsolutePath();
-        String p2 = ((new File(path))).getAbsolutePath();
-        assert (p2.startsWith(p1)) : "(" + p2 + ") does not start with (" + p1 + ")";
-
-        // +1 to remove the first / of the command path
-        if (p1.equals(p2)) {
-            return "";
-        } else {
-            if (p2.startsWith(p1)) {
-                return p2.substring(p1.length() + 1).replaceAll("\\\\", "/");
-            }
-
-            return path.replaceAll("\\\\", "/");
-        }
-    }
-
-    public void compute(OpVector log) throws Exception {
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, "");
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "Check number of file to walk");
-        ws.getDBType().updateFromWalk(ws.getPath(), ws.getXmlAutoDetection());
-        nbFileToWalk = ws.getDBType().getNbEntry();
-
-        List<String> walkedlist = new ArrayList<String>();
-        fif = new FilterIgnoreFile(ws);
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "Check local operation");
-
-        File root = new File(ws.getPath());
-
-        // check if important data is locked
-        File[] children = root.listFiles();
-
-        if (FileUtils.isLocked(ws.getRefCopyPath())) {
-            throw new FileLockedException(ws.getRefCopyPath());
-        }
-
-        for (int i = 0; i < children.length; i++) {
-            if (children[i].getName().equals(Workspace.SO6PREFIX)) {
-                continue;
-            }
-
-            if (FileUtils.isLocked(children[i])) {
-                throw new FileLockedException(children[i]);
-            }
-        }
-
-        // Start walking to detect local op
-        this.walk(root, walkedlist, log);
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "Detecting local remove");
-
-        List<String> removed = detectRemoved(walkedlist);
-
-        for (int i = 0; i < removed.size(); i++) {
-            Command cmd = new Remove((String) removed.get(i), ws);
-            log.add(cmd);
-        }
-
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-    }
-
-    private List<String> detectRemoved(List<String> l) {
-        List<String> result = new ArrayList<String>();
-        Iterator<String> li = ws.getRefCopy().getElements();
-        int to = ws.getRefCopy().getDBType().getNbEntry();
-        int current = 0;
-
-        while (li.hasNext()) {
-            current++;
-            StateMonitoring.getInstance().setXMLMonitoringState(0, to, current, "");
-
-            String path = (String) li.next();
-
-            if (!(l.contains(path))) {
-                result.add(path);
-                StateMonitoring.getInstance().setXMLMonitoringComment("Find local remove: " + path);
-            }
-        }
-
-        Collections.sort(result);
-        Collections.reverse(result);
-
-        return result;
-    }
-
-    public void diff(String path, OpVector log) throws IOException, SQLException, Exception {
-        if (new File(ws.getPath() + File.separator + path).isDirectory()) {
-            return;
-        }
-
-        if (!(ws.getRefCopy().exists(path))) {
-            // New File
-            throw new RuntimeException("Should never happen");
-        }
-
-        // File previously synchronized
-        String lastFile = ws.getRefCopy().getPath(path);
-        String newFile = ws.getPath() + File.separator + path;
-
-        /* TODO: Reintegrate XML support as a plugin feature?
-        if (ws.getRefCopy().getType(path) == DBType.TYPE_FILE_XML) {
-            // Manage XML
-            XyDiff d = new XyDiff(lastFile, newFile);
-            Collection cmds = XmlUtil.convertToSo6Commands(ws, path, d.diff().getXMLCommand());
-
-            //System.out.println("--> xml cmds");
-            for (Iterator i = cmds.iterator(); i.hasNext();) {
-                Command cmd = (Command) i.next();
-
-                //System.out.println(cmd.toString());
-                log.add(cmd);
-            }
-
-            //System.out.println("<-- xml cmds");
-        } else {
-        */
-            // Manage Txt
-            Diff d = new Diff();
-            d.diffFile(lastFile, newFile);
-
-            for (Iterator<Hunk> i = d.iterator(); i.hasNext();) {
-                Hunk h = i.next();
-
-                if (h instanceof HunkAdd) {
-                    Command cmd = new AddBlock(path, ws, (HunkAdd) h);
-                    log.add(cmd);
-                } else if (h instanceof HunkDel) {
-                    Command cmd = new DelBlock(path, ws, (HunkDel) h);
-                    log.add(cmd);
-                } else if (h instanceof HunkChange) {
-                    throw new RuntimeException("HunkChange should not be detected, check the jlibdiff configuration");
-
-                    // 					HunkChange hc = (HunkChange) h;
-                    // 					Logger.getLogger("fileparser.log").info(
-                    // 						"hunkChange(ld1:" + hc.getLD1() + ",lf1:" + hc.getLF1() +
-                    // ",ld2:" + hc.getLD2() + ",lf2:" + hc.getLF2() + ")");
-                    // 					HunkDel hd = hc.getHunkDel();
-                    // 					HunkAdd ha = hc.getHunkAdd();
-                    // 					Command cmd = new DelBlock(path, ws, ((HunkChange)
-                    // h).getHunkDel());
-                    // 					log.add(cmd);
-                    // 					cmd = new AddBlock(path, ws, ((HunkChange)
-                    // h).getHunkAdd());
-                    // 					log.add(cmd);
-                }
-           // }
-        }
-
-        System.gc();
-    } // traverse the file system starting from f // and build the vector of
-
-    // operations
-    private void walk(File f, List<String> wl, OpVector log)
-        throws java.io.IOException, SQLException, Exception {
-        if (!(f.exists())) {
-            throw new java.io.IOException(f.getPath() + " not exists");
-        }
-
-        if (!(f.isDirectory()) && !(f.isFile())) {
-            Logger.getLogger("ui.log").warning("unmanaged file type:" + f.getPath());
-
-            return;
-        }
-
-        // ignore dataFiles !!
-        if (f.getName().equals(Workspace.SO6PREFIX)) {
-            return;
-        }
-
-        String relpath = getRelPath(f.getPath()); // get the relative path...
-        Logger.getLogger("ui.log").severe("examining:" + relpath);
-        wl.add(relpath);
-        walked++;
-        size = size + f.length();
-
-        // monitoring xml
-        StateMonitoring.getInstance().setXMLMonitoringState(0, nbFileToWalk, walked, "walked... (" + relpath + ")");
-
-        boolean filePreviouslySynchronized = ws.getRefCopy().exists(relpath);
-        boolean typeHasChangedDirToFile = ws.getDBType().typeHasChanged(relpath, f);
-        boolean fileTypeHasChanged = ws.getRefCopy().getType(relpath) != ws.getDBType().getType(relpath);
-        int fileType = -1;
-
-        if ((!filePreviouslySynchronized) || typeHasChangedDirToFile || fileTypeHasChanged) { // new
-
-            // file... or type has changed
-            if (filePreviouslySynchronized && (typeHasChangedDirToFile || fileTypeHasChanged)) { // Type
-
-                // has
-                // changed
-                log.add(new Remove(relpath, ws));
-
-                if (typeHasChangedDirToFile) {
-                    ws.getDBType().remove(relpath);
-                } else {
-                    fileType = ws.getDBType().getType(relpath);
-                    ws.getDBType().remove(relpath);
-                }
-            }
-
-            if (fileType == -1) {
-                // Try to set it from the local db type
-                fileType = ws.getDBType().getType(relpath);
-            }
-
-            if (fileType == -1) {
-                // compute the type
-                fileType = ws.getDBType().computeType(f, ws.getXmlAutoDetection());
-            }
-
-            switch (fileType) {
-            case DBType.TYPE_DIR:
-                log.add(new AddDir(relpath, ws));
-                ws.getDBType().add(relpath, DBType.TYPE_DIR);
-
-                break;
-
-            case DBType.TYPE_FILE_BIN:
-                log.add(new AddBinaryFile(relpath, ws, new File(ws.getAttachFilePath())));
-                ws.getDBType().add(relpath, DBType.TYPE_FILE_BIN);
-
-                break;
-
-            case DBType.TYPE_FILE_TXT:
-                log.add(new AddTxtFile(relpath, ws, new File(ws.getAttachFilePath())));
-                ws.getDBType().add(relpath, DBType.TYPE_FILE_TXT);
-
-                break;
-            /* TODO: Reintegrate XML support as a plugin feature?
-            case DBType.TYPE_FILE_XML:
-                ws.getDBType().add(relpath, DBType.TYPE_FILE_XML);
-
-                // Manage Xml
-                String newFile = ws.getPath() + File.separator + relpath;
-
-                // normalize the document
-                //XmlUtil.normalizeDocument(newFile);
-                log.add(new AddXmlFile(relpath, ws, new File(ws.getAttachFilePath())));
-
-                break;
-            */
-            default:
-                throw new Exception("unmanaged db type: " + fileType + " file: " + f.getAbsolutePath());
-            }
-        } else { // previously synchronized file
-
-            // Type has not changed, just update...
-            switch (ws.getRefCopy().getType(relpath)) {
-            case DBType.TYPE_DIR:
-                break;
-
-            case DBType.TYPE_FILE_BIN:
-
-                if (!FileUtils.compareBinFile(f, new File(ws.getRefCopy().getPath(relpath)))) {
-                    log.add(new UpdateBinaryFile(relpath, ws, new File(ws.getAttachFilePath())));
-                }
-
-                break;
-
-            case DBType.TYPE_FILE_TXT:
-            case DBType.TYPE_FILE_XML:
-
-                if (!FileUtils.compareBinFile(f, new File(ws.getRefCopy().getPath(relpath)))) {
-                    this.diff(relpath, log);
-                }
-
-                break;
-
-            default:
-                throw new Exception("Unmanaged type : " + ws.getRefCopy().getType(relpath));
-            }
-        }
-
-        // recurse walking to seek children changes
-        if (f.isDirectory()) { // recurse walking to detect new children
-
-            File[] subs = f.listFiles(fif); // filtered !!
-
-            for (int i = 0; i < subs.length; i++) {
-                walk(subs[i], wl, log);
-            }
-        }
-    }
+	private WsConnection ws;
+	private FilterIgnoreFile fif;
+	private int walked = 0;
+	private long size = 0;
+	private WsConnection workspace;
+	private int nbFileToWalk;
+
+	public FileParser(WsConnection ws) throws Exception {
+		this.ws = ws;
+
+		String dir = FileUtils.createTmpDir().getPath();
+		File f = new File(dir);
+		f.mkdir();
+	}
+
+	public WsConnection getWorkspace() {
+		return workspace;
+	}
+
+	public void setWorkspace(WsConnection workspace) {
+		this.workspace = workspace;
+	}
+
+	private String getRelPath(String path) {
+		String p1 = (new File(ws.getPath())).getAbsolutePath();
+		String p2 = ((new File(path))).getAbsolutePath();
+		assert (p2.startsWith(p1)) : "(" + p2 + ") does not start with (" + p1 + ")";
+
+		// +1 to remove the first / of the command path
+		if (p1.equals(p2)) {
+			return "";
+		} else {
+			if (p2.startsWith(p1)) {
+				return p2.substring(p1.length() + 1).replaceAll("\\\\", "/");
+			}
+
+			return path.replaceAll("\\\\", "/");
+		}
+	}
+
+	public void compute(OpVector log) throws Exception {
+		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, "");
+		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1,
+		// "Check number of file to walk");
+		ApplicationStatus.getInstance().subTaskStarted(
+				ApplicationStatus.SubTask.WALKING_FOR_TYPE_DETECTION);
+		ws.getDBType().updateFromWalk(ws.getPath(), ws.getXmlAutoDetection());
+		nbFileToWalk = ws.getDBType().getNbEntry();
+
+		List<String> walkedlist = new ArrayList<String>();
+		fif = new FilterIgnoreFile(ws);
+		ApplicationStatus.getInstance().subTaskTerminated(
+				ApplicationStatus.SubTask.WALKING_FOR_TYPE_DETECTION);
+		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+
+		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1,
+		// "Check local operation");
+		ApplicationStatus.getInstance().subTaskStarted(
+				ApplicationStatus.SubTask.WALKING_FOR_CHANGE_DETECTION);
+		File root = new File(ws.getPath());
+
+		// check if important data is locked
+		File[] children = root.listFiles();
+
+		if (FileUtils.isLocked(ws.getRefCopyPath())) {
+			throw new FileLockedException(ws.getRefCopyPath());
+		}
+
+		for (int i = 0; i < children.length; i++) {
+			if (children[i].getName().equals(Workspace.SO6PREFIX)) {
+				continue;
+			}
+
+			if (FileUtils.isLocked(children[i])) {
+				throw new FileLockedException(children[i]);
+			}
+		}
+
+		// Start walking to detect local op
+		this.walk(root, walkedlist, log);
+		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+		ApplicationStatus.getInstance().subTaskTerminated(
+				ApplicationStatus.SubTask.WALKING_FOR_CHANGE_DETECTION);
+
+		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1,
+		// "Detecting local remove");
+		ApplicationStatus.getInstance().subTaskStarted(ApplicationStatus.SubTask.DETECTING_REMOVE);
+		List<String> removed = detectRemoved(walkedlist);
+		ApplicationStatus.getInstance().subTaskTerminated(ApplicationStatus.SubTask.DETECTING_REMOVE);
+
+		for (int i = 0; i < removed.size(); i++) {
+			Command cmd = new Remove(removed.get(i), ws);
+			log.add(cmd);
+		}
+		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+	}
+
+	private List<String> detectRemoved(List<String> l) {
+		List<String> result = new ArrayList<String>();
+		Iterator<String> li = ws.getRefCopy().getElements();
+		int entriesCount = ws.getRefCopy().getDBType().getNbEntry();
+		int current = 0;
+
+		while (li.hasNext()) {
+			current++;
+			// StateMonitoring.getInstance().setXMLMonitoringState(0, to,
+			// current, "");
+			ApplicationStatus.getInstance().taskOnProgress(0, entriesCount, current);
+
+			String path = li.next();
+
+			if (!(l.contains(path))) {
+				result.add(path);
+				// StateMonitoring.getInstance().setXMLMonitoringComment(true,
+				// "Find local remove: " + path);
+			}
+		}
+
+		Collections.sort(result);
+		Collections.reverse(result);
+
+		return result;
+	}
+
+	public void diff(String path, OpVector log) throws IOException, SQLException, Exception {
+		if (new File(ws.getPath() + File.separator + path).isDirectory()) {
+			return;
+		}
+
+		if (!(ws.getRefCopy().exists(path))) {
+			// New File
+			throw new RuntimeException("Should never happen");
+		}
+
+		// File previously synchronized
+		String lastFile = ws.getRefCopy().getPath(path);
+		String newFile = ws.getPath() + File.separator + path;
+
+		/*
+		 * TODO: Reintegrate XML support as a plugin feature? if
+		 * (ws.getRefCopy().getType(path) == DBType.TYPE_FILE_XML) { // Manage
+		 * XML XyDiff d = new XyDiff(lastFile, newFile); Collection cmds =
+		 * XmlUtil.convertToSo6Commands(ws, path, d.diff().getXMLCommand());
+		 * 
+		 * //System.out.println("--> xml cmds"); for (Iterator i =
+		 * cmds.iterator(); i.hasNext();) { Command cmd = (Command) i.next();
+		 * 
+		 * //System.out.println(cmd.toString()); log.add(cmd); }
+		 * 
+		 * //System.out.println("<-- xml cmds"); } else {
+		 */
+		// Manage Txt
+		Diff d = new Diff();
+		d.diffFile(lastFile, newFile);
+
+		for (Iterator<Hunk> i = d.iterator(); i.hasNext();) {
+			Hunk h = i.next();
+
+			if (h instanceof HunkAdd) {
+				Command cmd = new AddBlock(path, ws, (HunkAdd) h);
+				log.add(cmd);
+			} else if (h instanceof HunkDel) {
+				Command cmd = new DelBlock(path, ws, (HunkDel) h);
+				log.add(cmd);
+			} else if (h instanceof HunkChange) {
+				throw new RuntimeException("HunkChange should not be detected, check the jlibdiff configuration");
+
+				// HunkChange hc = (HunkChange) h;
+				// Logger.getLogger("fileparser.log").info(
+				// "hunkChange(ld1:" + hc.getLD1() + ",lf1:" + hc.getLF1() +
+				// ",ld2:" + hc.getLD2() + ",lf2:" + hc.getLF2() + ")");
+				// HunkDel hd = hc.getHunkDel();
+				// HunkAdd ha = hc.getHunkAdd();
+				// Command cmd = new DelBlock(path, ws, ((HunkChange)
+				// h).getHunkDel());
+				// log.add(cmd);
+				// cmd = new AddBlock(path, ws, ((HunkChange)
+				// h).getHunkAdd());
+				// log.add(cmd);
+			}
+			// }
+		}
+
+		System.gc();
+	}
+
+	// traverse the file system starting from f // and build the vector of
+	// operations
+	private void walk(File f, List<String> wl, OpVector log) throws java.io.IOException, SQLException, Exception {
+		if (!(f.exists())) {
+			throw new java.io.IOException(f.getPath() + " not exists");
+		}
+
+		if (!(f.isDirectory()) && !(f.isFile())) {
+			Logger.getLogger("ui.log").warning("unmanaged file type:" + f.getPath());
+
+			return;
+		}
+
+		// ignore dataFiles !!
+		if (f.getName().equals(Workspace.SO6PREFIX)) {
+			return;
+		}
+
+		String relpath = getRelPath(f.getPath()); // get the relative path...
+		Logger.getLogger("ui.log").severe("examining:" + relpath);
+		wl.add(relpath);
+		walked++;
+		size = size + f.length();
+
+		// monitoring xml
+		// StateMonitoring.getInstance().setXMLMonitoringState(0, nbFileToWalk,
+		// walked, "walked... (" + relpath + ")");
+		ApplicationStatus.getInstance().taskOnProgress(0, nbFileToWalk, walked);
+
+		boolean filePreviouslySynchronized = ws.getRefCopy().exists(relpath);
+		boolean typeHasChangedDirToFile = ws.getDBType().typeHasChanged(relpath, f);
+		boolean fileTypeHasChanged = ws.getRefCopy().getType(relpath) != ws.getDBType().getType(relpath);
+		int fileType = -1;
+
+		if ((!filePreviouslySynchronized) || typeHasChangedDirToFile || fileTypeHasChanged) { // new
+
+			// file... or type has changed
+			if (filePreviouslySynchronized && (typeHasChangedDirToFile || fileTypeHasChanged)) { // Type
+
+				// has
+				// changed
+				log.add(new Remove(relpath, ws));
+
+				if (typeHasChangedDirToFile) {
+					ws.getDBType().remove(relpath);
+				} else {
+					fileType = ws.getDBType().getType(relpath);
+					ws.getDBType().remove(relpath);
+				}
+			}
+
+			if (fileType == -1) {
+				// Try to set it from the local db type
+				fileType = ws.getDBType().getType(relpath);
+			}
+
+			if (fileType == -1) {
+				// compute the type
+				fileType = ws.getDBType().computeType(f, ws.getXmlAutoDetection());
+			}
+
+			switch (fileType) {
+			case DBType.TYPE_DIR:
+				log.add(new AddDir(relpath, ws));
+				ws.getDBType().add(relpath, DBType.TYPE_DIR);
+
+				break;
+
+			case DBType.TYPE_FILE_BIN:
+				log.add(new AddBinaryFile(relpath, ws, new File(ws.getAttachFilePath())));
+				ws.getDBType().add(relpath, DBType.TYPE_FILE_BIN);
+
+				break;
+
+			case DBType.TYPE_FILE_TXT:
+				log.add(new AddTxtFile(relpath, ws, new File(ws.getAttachFilePath())));
+				ws.getDBType().add(relpath, DBType.TYPE_FILE_TXT);
+
+				break;
+			/*
+			 * TODO: Reintegrate XML support as a plugin feature? case
+			 * DBType.TYPE_FILE_XML: ws.getDBType().add(relpath,
+			 * DBType.TYPE_FILE_XML);
+			 * 
+			 * // Manage Xml String newFile = ws.getPath() + File.separator +
+			 * relpath;
+			 * 
+			 * // normalize the document //XmlUtil.normalizeDocument(newFile);
+			 * log.add(new AddXmlFile(relpath, ws, new
+			 * File(ws.getAttachFilePath())));
+			 * 
+			 * break;
+			 */
+			default:
+				throw new Exception("unmanaged db type: " + fileType + " file: " + f.getAbsolutePath());
+			}
+		} else { // previously synchronized file
+
+			// Type has not changed, just update...
+			switch (ws.getRefCopy().getType(relpath)) {
+			case DBType.TYPE_DIR:
+				break;
+
+			case DBType.TYPE_FILE_BIN:
+
+				if (!FileUtils.compareBinFile(f, new File(ws.getRefCopy().getPath(relpath)))) {
+					log.add(new UpdateBinaryFile(relpath, ws, new File(ws.getAttachFilePath())));
+				}
+
+				break;
+
+			case DBType.TYPE_FILE_TXT:
+			case DBType.TYPE_FILE_XML:
+
+				if (!FileUtils.compareBinFile(f, new File(ws.getRefCopy().getPath(relpath)))) {
+					this.diff(relpath, log);
+				}
+
+				break;
+
+			default:
+				throw new Exception("Unmanaged type : " + ws.getRefCopy().getType(relpath));
+			}
+		}
+
+		// recurse walking to seek children changes
+		if (f.isDirectory()) { // recurse walking to detect new children
+
+			File[] subs = f.listFiles(fif); // filtered !!
+
+			for (int i = 0; i < subs.length; i++) {
+				walk(subs[i], wl, log);
+			}
+		}
+	}
 }

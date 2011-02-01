@@ -59,7 +59,8 @@ public class RestoreStateTest extends TestCase {
         super(name);
     }
 
-    protected void setUp() throws Exception {
+    @Override
+	protected void setUp() throws Exception {
         dir = FileUtils.createTmpDir().getPath();
 
         WsConnection[] ws = TestUtil.createWorkspace(dir, 2);
@@ -69,7 +70,8 @@ public class RestoreStateTest extends TestCase {
         dir2 = ws2.getPath();
     }
 
-    public void tearDown() throws Exception {
+    @Override
+	public void tearDown() throws Exception {
     }
 
     /**
@@ -96,7 +98,7 @@ public class RestoreStateTest extends TestCase {
             WsConnection.UPDATE_CORRUPTION_PATCH_LOCAL_COPY + ")", ws2.getCorruptedState() == WsConnection.UPDATE_CORRUPTION_PATCH_LOCAL_COPY);
 
         // Test the restore part
-        // check that the update doesn't work after corrutpion
+        // check that the update doesn't work after corruption
         try {
             ws2.update();
             assertTrue("Corruption doesn't stop update", false);
@@ -144,7 +146,7 @@ public class RestoreStateTest extends TestCase {
             WsConnection.UPDATE_CORRUPTION_PATCH_REF_COPY + ")", ws2.getCorruptedState() == WsConnection.UPDATE_CORRUPTION_PATCH_REF_COPY);
 
         // Test the restore part
-        // check that the update doesn't work after corrutpion
+        // check that the update doesn't work after corruption
         try {
             ws2.update();
             assertTrue("Corruption doesn't stop update", false);
@@ -193,7 +195,7 @@ public class RestoreStateTest extends TestCase {
             ")", ws2.getCorruptedState() == WsConnection.UPDATE_CORRUPTION_SAVE_PATCH);
 
         // Test the restore part
-        // check that the update doesn't work after corrutpion
+        // check that the update doesn't work after corruption
         try {
             ws2.update();
             assertTrue("Corruption doesn't stop update", false);
@@ -233,7 +235,7 @@ public class RestoreStateTest extends TestCase {
             WsConnection.UPDATE_CORRUPTION_REMOVE_PATCH + ")", ws2.getCorruptedState() == WsConnection.UPDATE_CORRUPTION_REMOVE_PATCH);
 
         // Test the restore part
-        // check that the update doesn't work after corrutpion
+        // check that the update doesn't work after corruption
         try {
             ws2.update();
             assertTrue("Corruption doesn't stop update", false);
@@ -274,7 +276,7 @@ public class RestoreStateTest extends TestCase {
             WsConnection.COMMIT_CORRUPTION_PATCH_REF_COPY + ")", ws1.getCorruptedState() == WsConnection.COMMIT_CORRUPTION_PATCH_REF_COPY);
 
         // Test the restore part
-        // check that the update doesn't work after corrutpion
+        // check that the update doesn't work after corruption
         try {
             ws1.commit("try to commit with corrupted ws");
             assertTrue("Corruption doesn't stop commit", false);
@@ -304,7 +306,7 @@ public class RestoreStateTest extends TestCase {
             ")", ws1.getCorruptedState() == WsConnection.COMMIT_CORRUPTION_SAVE_PATCH);
 
         // Test the restore part
-        // check that the update doesn't work after corrutpion
+        // check that the update doesn't work after corruption
         try {
             ws1.commit("try to commit with corrupted ws");
             assertTrue("Corruption doesn't stop commit", false);
@@ -343,7 +345,7 @@ public class RestoreStateTest extends TestCase {
             WsConnection.COMMIT_CORRUPTION_UPDATE_RECEIVED_TICKET + ")", ws1.getCorruptedState() == WsConnection.COMMIT_CORRUPTION_UPDATE_RECEIVED_TICKET);
 
         // Test the restore part
-        // check that the update doesn't work after corrutpion
+        // check that the update doesn't work after corruption
         try {
             ws1.commit("try to commit with corrupted ws");
             assertTrue("Corruption doesn't stop commit", false);
@@ -380,7 +382,7 @@ public class RestoreStateTest extends TestCase {
             WsConnection.COMMIT_CORRUPTION_UPDATE_LOCAL_DBTYPE + ")", ws1.getCorruptedState() == WsConnection.COMMIT_CORRUPTION_UPDATE_LOCAL_DBTYPE);
 
         // Test the restore part
-        // check that the update doesn't work after corrutpion
+        // check that the update doesn't work after corruption
         try {
             ws1.commit("try to commit with corrupted ws");
             assertTrue("Corruption doesn't stop commit", false);

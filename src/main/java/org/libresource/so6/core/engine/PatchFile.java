@@ -51,7 +51,7 @@ import java.util.logging.Logger;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.libresource.so6.core.StateMonitoring;
+import org.libresource.so6.core.ApplicationStatus;
 import org.libresource.so6.core.WsConnection;
 import org.libresource.so6.core.command.Command;
 import org.libresource.so6.core.command.NeutralCommand;
@@ -107,7 +107,8 @@ public class PatchFile {
                 continue;
             }
 
-            StateMonitoring.getInstance().setXMLMonitoringState(fromTicket, toTicket, ticket, "");
+            //StateMonitoring.getInstance().setXMLMonitoringState(fromTicket, toTicket, ticket, "");
+            ApplicationStatus.getInstance().taskOnProgress(fromTicket, toTicket, ticket);
             cmd.setTicket(ticket);
             ticket++;
             iterator.set(cmd);
@@ -174,7 +175,8 @@ public class PatchFile {
         @Override
 		public void doit(Command cmd) {
             try {
-                StateMonitoring.getInstance().setXMLMonitoringState(fromTicket, toTicket, ticket, "Apply patch(" + cmd + ")");
+                //StateMonitoring.getInstance().setXMLMonitoringState(fromTicket, toTicket, ticket, "Apply patch(" + cmd + ")");
+                ApplicationStatus.getInstance().taskOnProgress(fromTicket, toTicket, ticket);
                 Logger.getLogger("ui.log").info("executing:" + cmd);
                 cmd.execute(dir, dbt);
             } catch (Exception e) {
@@ -196,7 +198,8 @@ public class PatchFile {
         @Override
 		public void doit(Command cmd) {
             try {
-                StateMonitoring.getInstance().setXMLMonitoringState(fromTicket, toTicket, ticket, "Merging patch(" + cmd + ")");
+                //StateMonitoring.getInstance().setXMLMonitoringState(fromTicket, toTicket, ticket, "Merging patch(" + cmd + ")");
+                ApplicationStatus.getInstance().taskOnProgress(fromTicket, toTicket, ticket);             
                 ws.merge(cmd, locals);
             } catch (Exception e) {
                 e.printStackTrace();

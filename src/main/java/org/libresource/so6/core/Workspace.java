@@ -306,7 +306,7 @@ public class Workspace {
         if (propFile.exists()) {
             return new WsConnection(propFile.getAbsolutePath());
         } else {
-            throw new Exception("Invalide relative workspace connection path");
+            throw new Exception("Invalid relative workspace connection path");
         }
     }
 

@@ -37,7 +37,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
@@ -47,6 +46,7 @@ import java.util.ListIterator;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import org.libresource.so6.core.ApplicationStatus.Task;
 import org.libresource.so6.core.client.ClientI;
 import org.libresource.so6.core.command.Command;
 import org.libresource.so6.core.command.fs.AddBinaryFile;
@@ -244,17 +244,7 @@ public class WsConnection implements java.io.Serializable {
     public Workspace getWorkspace() throws Exception {
         return new Workspace(getPath());
     }
-
-    /**
-     * The logger is used to monitor what it's going on an update or commit
-     * operation. The logger follow the XML syntax in order to represent the
-     * current state of the current Job.
-     * <p>
-     * To get more information look at the
-     * org.libresource.so6.engine.log.monitoring.XMLLogHandler source code
-     *
-     * @return The monitoring XML logger
-     */
+    
     /**
      * Return the base path where the DbType are stored (local.dbtype /
      * refcopy.dbtype)
@@ -544,9 +534,8 @@ public class WsConnection implements java.io.Serializable {
         }
 
         report = new StringBuffer();
-        StateMonitoring.getInstance().setXMLMonitoringStartAction("COMMIT");
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, null);
-        StateMonitoring.getInstance().setXMLMonitoringComment("Start the commit process");
+        ApplicationStatus.getInstance().actionStarted(ApplicationStatus.Action.COMMIT, 3);
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, null);
 
         //
         long ticket = this.getNs() + 1;
@@ -555,20 +544,20 @@ public class WsConnection implements java.io.Serializable {
         File tmp = new File(getLocalCmdPath());
         tmp.mkdirs();
 
-        //
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "Compute local operations");
-
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "Compute local operations");
+        ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.DETECT_LOCAL_OPERATION);
+        
         //
         OpVectorFsImpl opv = new OpVectorFsImpl(tmp.getPath());
         FileParser fp = new FileParser(this);
         fp.compute(opv);
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+        ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.DETECT_LOCAL_OPERATION);
 
         if (opv.size() == 0) {
-            StateMonitoring.getInstance().setXMLMonitoringComment(false, "No local operation found");
-            StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done");
-            StateMonitoring.getInstance().setXMLMonitoringEndAction("COMMIT");
+            //StateMonitoring.getInstance().setXMLMonitoringComment(false, "No local operation found");
+            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+            //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done");
+            ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.COMMIT);
 
             return; // Nothing to commit
         }
@@ -583,10 +572,12 @@ public class WsConnection implements java.io.Serializable {
             lastticket = (ticket + computeNbCommandToSend(opv)) - 1;
         }
 
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-        StateMonitoring.getInstance().setXMLMonitoringComment(true, "Building patch file");
-        StateMonitoring.getInstance().setXMLMonitoringComment(false, "Inserting local command");
-
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
+        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Building patch file");
+        //StateMonitoring.getInstance().setXMLMonitoringComment(false, "Inserting local command");
+        ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.BUILD_PATCH);
+        
+        
         //
         File f = new File(getDataPath(), SO6_LAST_COMMIT_PATCH_FILE);
         OutputStreamWriter osw = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(f.getPath())), "UTF-8");
@@ -594,50 +585,100 @@ public class WsConnection implements java.io.Serializable {
         osw.close();
 
         //
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-        StateMonitoring.getInstance().setXMLMonitoringComment(true, "Connecting to the server");
+        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
+        ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.BUILD_PATCH);
+        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Connecting to the server");
 
         CVSReportMaker reportMaker = new CVSReportMaker(getLocalCmdPath());
         reportMaker.buildIndexTable();
         report.append(reportMaker.getReport());
 
         if (simulationMode) {
+            ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.UPLOAD_PATCH);
             FileUtils.copy(f.getPath(), simulationOutputDir + File.separator + "commit-" + System.currentTimeMillis() + ".xml");
-            StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-            StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch local reference");
-            StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done");
-            StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done (simulation mode)");
-            StateMonitoring.getInstance().setXMLMonitoringEndAction("COMMIT");
+            ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.UPLOAD_PATCH);
+            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+            //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
+            //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch local reference");
+            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+            //StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done");
+            //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done (simulation mode)");
+            ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.COMMIT);
         } else {
+            ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.UPLOAD_PATCH);
             getClient().sendPatch(getNs() + 1, lastticket, f.getPath(), true);
-            StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-            StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch local reference");
+            ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.UPLOAD_PATCH);
+            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+            //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
+            ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.PATCH_REFERENCE_COPY);
+            //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch local reference");
             setCorrupted(COMMIT_CORRUPTION_PATCH_REF_COPY);
-            StateMonitoring.getInstance().setXMLMonitoringStartCriticalPart();
+            ApplicationStatus.getInstance().criticalPhaseStarted();
             refcopy.patch(f.getPath());
             setCorrupted(COMMIT_CORRUPTION_SAVE_PATCH);
-            StateMonitoring.getInstance().setXMLMonitoringStartCriticalPart();
+            ApplicationStatus.getInstance().criticalPhaseStarted();
             appliedPatch.add(f.getPath());
             setCorrupted(COMMIT_CORRUPTION_UPDATE_RECEIVED_TICKET);
-            StateMonitoring.getInstance().setXMLMonitoringStartCriticalPart();
+            ApplicationStatus.getInstance().criticalPhaseStarted();
             receivedPatch.setLastTicket(getNs());
 
             // update local db type
             setCorrupted(COMMIT_CORRUPTION_UPDATE_LOCAL_DBTYPE);
-            StateMonitoring.getInstance().setXMLMonitoringStartCriticalPart();
+            ApplicationStatus.getInstance().criticalPhaseStarted();
             getDBType().updateFromDBType(refcopy.getDBType());
             setCorrupted(NO_CORRUPTION);
-            StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done");
-            StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done");
-            StateMonitoring.getInstance().setXMLMonitoringEndAction("COMMIT");
+            ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.PATCH_REFERENCE_COPY);
+
+            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+            //StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done");
+            //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done");
+            ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.COMMIT);
         }
+    }
+
+    /**
+     * Update the local workspace in order to integrate the concurrent change.
+     *
+     * @throws Exception
+     */
+    public void update() throws Exception {
+        // check corruption
+        if (isCorrupted()) {
+            throw new WorkspaceCorruptedException("The local workspace is corrupted");
+        }
+
+        report = new StringBuffer();
+        needToCheckLocalOp = true;
+        ApplicationStatus.getInstance().actionStarted(ApplicationStatus.Action.UPDATE, 2);
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, "");
+        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Start the update process");
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
+        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Download all patch");
+        ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.DOWNLOAD_PATCHES);
+        receive();
+        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+        ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.DOWNLOAD_PATCHES);
+
+        File[] patches = receivedPatch.list();
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(patches.length, "Updating...");
+        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Merging");
+        ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.MERGE); 
+        for (int i = 0; i < patches.length; i++) {
+            //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
+            this.update(patches[i].getPath());
+            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+        }
+        ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.MERGE);
+
+        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+        //StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done update");
+        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Update process done");
+        getDBType().updateFromDBType(refcopy.getDBType());
+        ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.UPDATE);
     }
 
     private void update(String patchfile) throws Exception {
@@ -646,10 +687,10 @@ public class WsConnection implements java.io.Serializable {
 
         File localOpDir = new File(getLocalCmdPath());
         File mergedOpDir = new File(getMergedOpPath());
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(3, "");
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-        StateMonitoring.getInstance().setXMLMonitoringComment(true, "Check local operartions");
-
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(3, "");
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
+        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Check local operations");
+        ApplicationStatus.getInstance().taskStarted(Task.DETECT_LOCAL_OPERATION);
         OpVector locals = new OpVectorFsImpl(localOpDir.getPath());
 
         if (needToCheckLocalOp) {
@@ -659,16 +700,22 @@ public class WsConnection implements java.io.Serializable {
         if (locals.size() == 0) {
             needToCheckLocalOp = false;
         }
+        ApplicationStatus.getInstance().taskTerminated(Task.DETECT_LOCAL_OPERATION);
 
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-        StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch local path");
+        
+        ApplicationStatus.getInstance().taskStarted(Task.PATCH_LOCAL_COPY);
+        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
+        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch local path");
         mergedOp = new OpVectorFsImpl(mergedOpDir.getPath());
         this.merge(patchfile, locals);
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-        StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch ref copy");
+        ApplicationStatus.getInstance().taskTerminated(Task.PATCH_LOCAL_COPY);
 
+        
+        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
+        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch ref copy");
+        ApplicationStatus.getInstance().taskStarted(Task.PATCH_REFERENCE_COPY);
         if (!simulationMode) {
             File lastPatch = new File(getDataPath() + File.separator + SO6_LAST_COMMIT_PATCH_FILE);
 
@@ -677,7 +724,7 @@ public class WsConnection implements java.io.Serializable {
 
                 // System.out.println("UPDATE_CORRUPTION_PATCH_LOCAL_COPY : "
                 // +UPDATE_CORRUPTION_PATCH_LOCAL_COPY);
-                StateMonitoring.getInstance().setXMLMonitoringStartCriticalPart();
+                ApplicationStatus.getInstance().criticalPhaseStarted();
 
                 ListIterator<Command> iterator = mergedOp.getCommands();
                 Command cmd = null;
@@ -695,25 +742,25 @@ public class WsConnection implements java.io.Serializable {
 
             // System.out.println("UPDATE_CORRUPTION_PATCH_REF_COPY : "
             // +UPDATE_CORRUPTION_PATCH_REF_COPY);
-            StateMonitoring.getInstance().setXMLMonitoringStartCriticalPart();
+            ApplicationStatus.getInstance().criticalPhaseStarted();
             this.getRefCopy().patch(patchfile);
             setCorrupted(UPDATE_CORRUPTION_SAVE_PATCH);
 
             // System.out.println("UPDATE_CORRUPTION_SAVE_PATCH : "
             // +UPDATE_CORRUPTION_SAVE_PATCH);
-            StateMonitoring.getInstance().setXMLMonitoringStartCriticalPart();
+            ApplicationStatus.getInstance().criticalPhaseStarted();
             this.appliedPatch.add(patchfile);
             setCorrupted(UPDATE_CORRUPTION_REMOVE_PATCH);
 
             // System.out.println("UPDATE_CORRUPTION_REMOVE_PATCH : "
             // +UPDATE_CORRUPTION_REMOVE_PATCH);
-            StateMonitoring.getInstance().setXMLMonitoringStartCriticalPart();
+            ApplicationStatus.getInstance().criticalPhaseStarted();
             this.receivedPatch.remove(patchfile);
             setCorrupted(NO_CORRUPTION);
         }
-
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+        ApplicationStatus.getInstance().taskTerminated(Task.PATCH_REFERENCE_COPY);
+        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
 
         // Save patch report
         CVSReportMaker reportMaker = new CVSReportMaker(getMergedOpPath());
@@ -722,46 +769,7 @@ public class WsConnection implements java.io.Serializable {
         report.append(reportMaker.getReport());
         report.append("\n");
     }
-
-    /**
-     * Update the local workspace in order to integrate the concurrent change.
-     *
-     * @throws Exception
-     */
-    public void update() throws Exception {
-        // check corruption
-        if (isCorrupted()) {
-            throw new WorkspaceCorruptedException("The local workspace is corrupted");
-        }
-
-        report = new StringBuffer();
-        needToCheckLocalOp = true;
-        StateMonitoring.getInstance().setXMLMonitoringStartAction("UPDATE");
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, "");
-        StateMonitoring.getInstance().setXMLMonitoringComment(true, "Start the update process");
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-        StateMonitoring.getInstance().setXMLMonitoringComment(true, "Download all patch");
-        receive();
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-
-        File[] patches = receivedPatch.list();
-        StateMonitoring.getInstance().setXMLMonitoringStartSubCall(patches.length, "Updating...");
-        StateMonitoring.getInstance().setXMLMonitoringComment(true, "Merging");
-
-        for (int i = 0; i < patches.length; i++) {
-            StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-            this.update(patches[i].getPath());
-            StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        }
-
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done update");
-        StateMonitoring.getInstance().setXMLMonitoringComment(true, "Update process done");
-        StateMonitoring.getInstance().setXMLMonitoringEndAction("UPDATE");
-        getDBType().updateFromDBType(refcopy.getDBType());
-    }
-
+    
     /**
      * Download the remote patch without applying them locally.
      *
@@ -784,8 +792,9 @@ public class WsConnection implements java.io.Serializable {
         }
 
         while (getClient().getLastTicket() > receivedPatch.getLastTicket()) {
-            StateMonitoring.getInstance().setXMLMonitoringState(0, nbPatchToDownload, currentPatchNumber,
-                "Downloading patch " + currentPatchNumber + " / " + nbPatchToDownload);
+            //StateMonitoring.getInstance().setXMLMonitoringState(0, nbPatchToDownload, currentPatchNumber,
+            //    "Downloading patch " + currentPatchNumber + " / " + nbPatchToDownload);
+            ApplicationStatus.getInstance().taskOnProgress(0, nbPatchToDownload, currentPatchNumber);
             currentPatchNumber++;
 
             String fname = getClient().getPatch(receivedPatch.getLastTicket() + 1);
@@ -1297,6 +1306,7 @@ public class WsConnection implements java.io.Serializable {
         }
     }
 
+    /*
     public String sendCurrentCompressState() throws Exception {
         StateMonitoring.getInstance().setXMLMonitoringStartAction("COMPRESS");
         StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, null);
@@ -1347,7 +1357,6 @@ public class WsConnection implements java.io.Serializable {
         return patchToDo.getPath();
     }
 
-    /*
     public void compressLocalHistory(long from, long to)
         throws Exception {
         StateMonitoring.getInstance().setXMLMonitoringStartAction("COMPRESS");

@@ -59,7 +59,8 @@ public class CorruptedDetectionTest extends TestCase {
         super(name);
     }
 
-    protected void setUp() throws Exception {
+    @Override
+	protected void setUp() throws Exception {
         dir = FileUtils.createTmpDir().getPath();
 
         WsConnection[] ws = TestUtil.createWorkspace(dir, 2);
@@ -69,7 +70,8 @@ public class CorruptedDetectionTest extends TestCase {
         dir2 = ws2.getPath();
     }
 
-    public void tearDown() throws Exception {
+    @Override
+	public void tearDown() throws Exception {
     }
 
     /**
