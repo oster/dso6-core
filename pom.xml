@@ -136,7 +136,7 @@
 		          		</manifest>
 		          		<manifestEntries>
 		            		<mode>development</mode>
-		            		<url>${pom.url}</url>
+		            		<url>${project.url}</url>
 		          		</manifestEntries>
 		        	</archive>
 		    	</configuration>
@@ -144,6 +144,7 @@
 			<plugin>
 			        <groupId>org.codehaus.mojo.webstart</groupId>
 			        <artifactId>webstart-maven-plugin</artifactId>
+			        <version>1.0-beta-1</version>
 			        <executions>
 			           <execution>
 			              <goals>
