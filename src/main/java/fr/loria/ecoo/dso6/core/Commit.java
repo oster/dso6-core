@@ -25,11 +25,10 @@ public class Commit {
 		this.clientProperties.put(BasicClientImpl.DSO6_COMMIT_CAPABILITY, capabilityId);
 		//this.clientProperties.put(ClientI.SO6_XML_DETECT, "false");
 	}
-	
-	
+
+
 	public void perform() {
 		try {
-			// init basePath
 			String basePath;
 			Properties queuesDatabase = loadQueuesDatabase();
 			String queueId = this.clientProperties.getProperty(ClientI.SO6_QUEUE_ID);
@@ -41,26 +40,31 @@ public class Commit {
 
 			Workspace ws = null;
 			WsConnection wsc = null;
+			UpdateWindow uw = new UpdateWindow();
 			try {
 				ws = new Workspace(basePath);
 				wsc = ws.getConnection(null);
-				
+
 				if (wsc.getProperty(BasicClientImpl.DSO6_COMMIT_CAPABILITY) == null) {
 					wsc.setProperty(BasicClientImpl.DSO6_COMMIT_CAPABILITY, this.clientProperties.getProperty(BasicClientImpl.DSO6_COMMIT_CAPABILITY));
 				}
-				
+
 				// ask the user for commit message
+				uw.report.setText("Commit en cours...");
 				wsc.commit("HERE IS THE COMMIT MESSAGE");
 			} catch (IOException ex) {
+				uw.report.setText("Erreur de commit.\n" + wsc.getReport());
 				throw new NotYetCheckedOutException(ex);
 			}
 			System.out.println(wsc.getReport());
+			uw.report.setText("Commit terminé.\n" + wsc.getReport());
+			uw.enableClose();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (NotYetCheckedOutException e) {
-			e.printStackTrace();			
+			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -82,13 +86,13 @@ public class Commit {
 		// first-param : endPointUI
 		// first-param : queueId
 		// second-param : capabilityId
-    		
+
 		Commit action = new Commit(args[0], args[1], args[2]);
-		
+
 		//String testEndPointURI = "http://localhost:8888/dso6/";
 		//String testQueueId = "86b4b7ad1343fedf8f02fa5451edf487";
 		//String testUpdateCapabilityId = "e4ec4e3a370e74538ad396ab67339555";
-		//String testCommitCapabilityId = "f2972864531caaa41aae857f4a60b75f";	
+		//String testCommitCapabilityId = "f2972864531caaa41aae857f4a60b75f";
 		//Commit action = new Commit(testEndPointURI, testQueueId, testCommitCapabilityId);
 		action.perform();
 	}

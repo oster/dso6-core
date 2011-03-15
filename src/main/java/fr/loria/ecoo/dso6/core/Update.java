@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
+import javax.swing.*;
 
 import org.libresource.so6.core.Workspace;
 import org.libresource.so6.core.WsConnection;
@@ -32,14 +33,17 @@ public class Update {
 	public void perform() {
 		try {
 			// init basePath
-			String basePath;
+			String basePath = "";
 			Properties queuesDatabase = loadQueuesDatabase();
 			String queueId = this.clientProperties.getProperty(ClientI.SO6_QUEUE_ID);
 			if (queuesDatabase.containsKey(queueId)) {
 				basePath = queuesDatabase.getProperty(queueId);
 			} else {
-				// we should ask the user !!!
-				basePath = "/tmp/dso6-" + queueId;
+				JFileChooser jfc = new JFileChooser();
+				jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				while(jfc.showOpenDialog(new JFrame()) != JFileChooser.APPROVE_OPTION);
+				basePath = jfc.getSelectedFile().getAbsolutePath();
+
 				queuesDatabase.put(queueId, basePath);
 				storeQueuesDatabase(queuesDatabase);
 			}
@@ -49,12 +53,15 @@ public class Update {
 				ws = new Workspace(basePath);
 			} catch (IOException ex) {
 				ws = Workspace.createWorkspace(basePath);
-				ws.createConnection(clientProperties, CLIENT_CLASSNAME, "default");				
+				ws.createConnection(clientProperties, CLIENT_CLASSNAME, "default");
 			}
 			WsConnection wsc = ws.getConnection(null);
+			UpdateWindow uw = new UpdateWindow();
+			uw.report.setText("Update en cours...");
 			wsc.update();
 			System.out.println(wsc.getReport());
-			//wsc.getReport();
+			uw.report.setText("Update terminé.\n" + wsc.getReport());
+			uw.enableClose();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -97,9 +104,9 @@ public class Update {
 		// first-param : endPointUI
 		// first-param : queueId
 		// second-param : capabilityId
-    	
+
 		Update action = new Update(args[0], args[1], args[2]);
-		
+
 		//String testEndPointURI = "http://localhost:8888/dso6/";
 		//String testQueueId = "86b4b7ad1343fedf8f02fa5451edf487";
 		//String testUpdateCapabilityId = "e4ec4e3a370e74538ad396ab67339555";
