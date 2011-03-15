@@ -56,12 +56,12 @@ public class Update {
 				ws.createConnection(clientProperties, CLIENT_CLASSNAME, "default");
 			}
 			WsConnection wsc = ws.getConnection(null);
-			UpdateWindow uw = new UpdateWindow();
-			uw.report.setText("Update en cours...");
+			InfoWindow iw = new InfoWindow();
+			iw.report.setText("Update en cours...");
 			wsc.update();
 			System.out.println(wsc.getReport());
-			uw.report.setText("Update terminé.\n" + wsc.getReport());
-			uw.enableClose();
+			iw.report.setText("Update terminé.\n" + wsc.getReport());
+			iw.enableClose();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
