@@ -40,7 +40,8 @@ public class Commit {
 
 			Workspace ws = null;
 			WsConnection wsc = null;
-			InfoWindow iw = new InfoWindow();
+			InfoWindow iw = null;
+			String commitMessage = "";
 			try {
 				ws = new Workspace(basePath);
 				wsc = ws.getConnection(null);
@@ -50,14 +51,24 @@ public class Commit {
 				}
 
 				// ask the user for commit message
+				CommitWindow cw = new CommitWindow();
+				synchronized(cw.lock) {
+					cw.lock.wait();
+				}
+				commitMessage = cw.message.getText();
+
+				iw = new InfoWindow();
 				iw.report.setText("Commit en cours...");
-				wsc.commit("HERE IS THE COMMIT MESSAGE");
+
+				wsc.commit(commitMessage);
 			} catch (IOException ex) {
+				if(iw == null)
+					iw = new InfoWindow();
 				iw.report.setText("Erreur de commit.\n" + wsc.getReport());
 				throw new NotYetCheckedOutException(ex);
 			}
 			System.out.println(wsc.getReport());
-			iw.report.setText("Commit terminé.\n" + wsc.getReport());
+			iw.report.setText("Commit terminé.\n\n" + commitMessage + "\n" + wsc.getReport());
 			iw.enableClose();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
