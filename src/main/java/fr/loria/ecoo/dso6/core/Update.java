@@ -58,7 +58,7 @@ public class Update {
 			WsConnection wsc = ws.getConnection(null);
 			InfoWindow iw = new InfoWindow();
 			iw.report.setText("Update en cours...");
-			wsc.update();
+			wsc.update(iw);
 			System.out.println(wsc.getReport());
 			iw.report.setText("Update terminé.\n" + wsc.getReport());
 			iw.enableClose();

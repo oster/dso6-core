@@ -60,7 +60,7 @@ public class Commit {
 				iw = new InfoWindow();
 				iw.report.setText("Commit en cours...");
 
-				wsc.commit(commitMessage);
+				wsc.commit(commitMessage, iw);
 			} catch (IOException ex) {
 				if(iw == null)
 					iw = new InfoWindow();
