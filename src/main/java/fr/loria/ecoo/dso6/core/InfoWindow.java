@@ -8,6 +8,9 @@ public class InfoWindow extends JFrame {
 	protected JProgressBar progress;
 	protected JPanel northPanel;
 	protected JPanel centerPanel;
+	protected JPanel jProgressPanel;
+	protected JPanel jProgressUnderStepPanel;
+	protected JProgressBar progressUnderStep;
 	
 	public InfoWindow() {
 		setTitle("DSo6");
@@ -26,9 +29,21 @@ public class InfoWindow extends JFrame {
 		
 		northPanel = new JPanel(new BorderLayout(1, 1));
 		
+		jProgressPanel = new JPanel(new BorderLayout(1, 1));
+		jProgressUnderStepPanel =  new JPanel(new BorderLayout(1, 1));
+		
 		progress = new JProgressBar(0, 100);
 		progress.setStringPainted(true);
-		northPanel.add(progress,BorderLayout.CENTER);
+		jProgressPanel.add(progress,BorderLayout.CENTER);
+		jProgressPanel.setBorder(BorderFactory.createTitledBorder("Global"));
+		
+		progressUnderStep = new JProgressBar(0, 100);
+		progressUnderStep.setStringPainted(true);
+		jProgressUnderStepPanel.add(progressUnderStep,BorderLayout.CENTER);
+		jProgressUnderStepPanel.setBorder(BorderFactory.createTitledBorder("Step in progress"));
+		
+		northPanel.add(jProgressPanel, BorderLayout.CENTER);
+		northPanel.add(jProgressUnderStepPanel, BorderLayout.SOUTH);
 		
 		northPanel.setBorder(BorderFactory.createTitledBorder("Progression"));
 		add(northPanel, BorderLayout.NORTH);
@@ -45,6 +60,11 @@ public class InfoWindow extends JFrame {
 	
 	public void updateProgressBar(int value){
 		progress.setValue(value);
+		this.validate();
+	}
+	
+	public void updateProgressBarUnderStep(int value){
+		progressUnderStep.setValue(value);
 		this.validate();
 	}
 }

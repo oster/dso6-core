@@ -68,6 +68,7 @@ import org.libresource.so6.core.engine.util.FileUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+import fr.loria.ecoo.dso6.core.InfoWindow;
 
 
 /**

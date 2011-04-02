@@ -1,3 +1,4 @@
+
 /**
  * LibreSource
  * Copyright (C) 2004-2008 Artenum SARL / INRIA
@@ -61,6 +62,7 @@ import org.libresource.so6.core.command.text.AddBlock;
 import org.libresource.so6.core.command.text.AddTxtFile;
 import org.libresource.so6.core.command.text.DelBlock;
 import org.libresource.so6.core.engine.util.FileUtils;
+import fr.loria.ecoo.dso6.core.InfoWindow;
 
 /**
  * FileParser : Detect file modification...
@@ -119,21 +121,18 @@ public class FileParser {
 		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, "");
 		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1,
 		// "Check number of file to walk");
-		ApplicationStatus.getInstance().subTaskStarted(
-				ApplicationStatus.SubTask.WALKING_FOR_TYPE_DETECTION);
+		ApplicationStatus.getInstance().subTaskStarted(ApplicationStatus.SubTask.WALKING_FOR_TYPE_DETECTION);
 		ws.getDBType().updateFromWalk(ws.getPath(), ws.getXmlAutoDetection());
 		nbFileToWalk = ws.getDBType().getNbEntry();
 
 		List<String> walkedlist = new ArrayList<String>();
 		fif = new FilterIgnoreFile(ws);
-		ApplicationStatus.getInstance().subTaskTerminated(
-				ApplicationStatus.SubTask.WALKING_FOR_TYPE_DETECTION);
+		ApplicationStatus.getInstance().subTaskTerminated(ApplicationStatus.SubTask.WALKING_FOR_TYPE_DETECTION);
 		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
 
 		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1,
 		// "Check local operation");
-		ApplicationStatus.getInstance().subTaskStarted(
-				ApplicationStatus.SubTask.WALKING_FOR_CHANGE_DETECTION);
+		ApplicationStatus.getInstance().subTaskStarted(ApplicationStatus.SubTask.WALKING_FOR_CHANGE_DETECTION);
 		File root = new File(ws.getPath());
 
 		// check if important data is locked
@@ -171,6 +170,63 @@ public class FileParser {
 		}
 		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
 		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+	}
+
+	public void compute(OpVector log, InfoWindow iw) throws Exception {
+		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, "");
+		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1,
+		// "Check number of file to walk");
+		ApplicationStatus.getInstance().subTaskStarted(ApplicationStatus.SubTask.WALKING_FOR_TYPE_DETECTION);
+		ws.getDBType().updateFromWalk(ws.getPath(), ws.getXmlAutoDetection());
+		nbFileToWalk = ws.getDBType().getNbEntry();
+
+		List<String> walkedlist = new ArrayList<String>();
+		fif = new FilterIgnoreFile(ws);
+		ApplicationStatus.getInstance().subTaskTerminated(ApplicationStatus.SubTask.WALKING_FOR_TYPE_DETECTION);
+		iw.updateProgressBarUnderStep(40);
+		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+
+		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1,
+		// "Check local operation");
+		ApplicationStatus.getInstance().subTaskStarted(ApplicationStatus.SubTask.WALKING_FOR_CHANGE_DETECTION);
+		File root = new File(ws.getPath());
+
+		// check if important data is locked
+		File[] children = root.listFiles();
+
+		if (FileUtils.isLocked(ws.getRefCopyPath())) {
+			throw new FileLockedException(ws.getRefCopyPath());
+		}
+
+		for (int i = 0; i < children.length; i++) {
+			if (children[i].getName().equals(Workspace.SO6PREFIX)) {
+				continue;
+			}
+
+			if (FileUtils.isLocked(children[i])) {
+				throw new FileLockedException(children[i]);
+			}
+		}
+
+		// Start walking to detect local op
+		this.walk(root, walkedlist, log);
+		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+		ApplicationStatus.getInstance().subTaskTerminated(
+				ApplicationStatus.SubTask.WALKING_FOR_CHANGE_DETECTION);
+		iw.updateProgressBarUnderStep(80);
+		// StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1,
+		// "Detecting local remove");
+		ApplicationStatus.getInstance().subTaskStarted(ApplicationStatus.SubTask.DETECTING_REMOVE);
+		List<String> removed = detectRemoved(walkedlist);
+		ApplicationStatus.getInstance().subTaskTerminated(ApplicationStatus.SubTask.DETECTING_REMOVE);
+
+		for (int i = 0; i < removed.size(); i++) {
+			Command cmd = new Remove(removed.get(i), ws);
+			log.add(cmd);
+		}
+		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+		// StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
+		iw.updateProgressBarUnderStep(100);
 	}
 
 	private List<String> detectRemoved(List<String> l) {

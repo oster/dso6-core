@@ -46,6 +46,7 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipOutputStream;
+import fr.loria.ecoo.dso6.core.InfoWindow;
 
 import jlibdiff.Diff;
 
@@ -487,6 +488,23 @@ public class FileUtils {
 
         fos.close();
         fis.close();
+    }
+
+    public static void copy(String input, String output, InfoWindow iw)
+        throws Exception {
+		iw.updateProgressBarUnderStep(0);
+        FileInputStream fis = new FileInputStream(input);
+        FileOutputStream fos = new FileOutputStream(output);
+        byte[] buffer = new byte[1024];
+        int length;
+		iw.updateProgressBarUnderStep(20);
+        while ((length = fis.read(buffer)) != -1) {
+            fos.write(buffer, 0, length);
+        }
+		iw.updateProgressBarUnderStep(80);
+        fos.close();
+        fis.close();
+        iw.updateProgressBarUnderStep(100);
     }
 
     /**
