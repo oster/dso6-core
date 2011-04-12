@@ -32,19 +32,26 @@ public class Update {
 
 	public void perform() {
 		try {
-			// init basePath
-			String basePath = "";
+			String basePath = "", name = "";
 			Properties queuesDatabase = loadQueuesDatabase();
 			String queueId = this.clientProperties.getProperty(ClientI.SO6_QUEUE_ID);
+
 			if (queuesDatabase.containsKey(queueId)) {
-				basePath = queuesDatabase.getProperty(queueId);
+				// if queue contained in queues database
+				QueuePropertyValue qpv = QueuePropertyValue.fromString(queuesDatabase.getProperty(queueId));
+
+				basePath = qpv.getPath();
+				name = qpv.getName();
 			} else {
+				// otherwise, ask the user and save queues database
 				JFileChooser jfc = new JFileChooser();
 				jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				while(jfc.showOpenDialog(new JFrame()) != JFileChooser.APPROVE_OPTION);
 				basePath = jfc.getSelectedFile().getAbsolutePath();
 
-				queuesDatabase.put(queueId, basePath);
+				name = "<na:me>";
+
+				queuesDatabase.put(queueId, new QueuePropertyValue(name, basePath).toString());
 				storeQueuesDatabase(queuesDatabase);
 			}
 
@@ -53,7 +60,7 @@ public class Update {
 				ws = new Workspace(basePath);
 			} catch (IOException ex) {
 				ws = Workspace.createWorkspace(basePath);
-				ws.createConnection(clientProperties, CLIENT_CLASSNAME, "default");
+				ws.createConnection(clientProperties, CLIENT_CLASSNAME, name);
 			}
 			WsConnection wsc = ws.getConnection(null);
 			InfoWindow iw = new InfoWindow();

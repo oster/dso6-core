@@ -15,6 +15,7 @@ public class Commit {
 
 	private static String QUEUES_PROPERTIES_PATH = System.getProperty("user.home") + File.separator
 	+ ".dso6-queues.properties";
+	private static String CLIENT_CLASSNAME = "fr.loria.ecoo.dso6.core.BasicClientImpl";
 
 	private Properties clientProperties;
 
@@ -29,12 +30,18 @@ public class Commit {
 
 	public void perform() {
 		try {
-			String basePath;
+			String basePath, name;
 			Properties queuesDatabase = loadQueuesDatabase();
 			String queueId = this.clientProperties.getProperty(ClientI.SO6_QUEUE_ID);
+
 			if (queuesDatabase.containsKey(queueId)) {
-				basePath = queuesDatabase.getProperty(queueId);
+				// if queue contained in queues database
+				QueuePropertyValue qpv = QueuePropertyValue.fromString(queuesDatabase.getProperty(queueId));
+
+				basePath = qpv.getPath();
+				name = qpv.getName();
 			} else {
+				// otherwise
 				throw new NotYetCheckedOutException();
 			}
 
@@ -44,6 +51,7 @@ public class Commit {
 			String commitMessage = "";
 			try {
 				ws = new Workspace(basePath);
+				ws.createConnection(clientProperties, CLIENT_CLASSNAME, name);
 				wsc = ws.getConnection(null);
 
 				if (wsc.getProperty(BasicClientImpl.DSO6_COMMIT_CAPABILITY) == null) {
