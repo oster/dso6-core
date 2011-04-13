@@ -148,6 +148,35 @@ public class BasicClientImpl implements ClientI {
 			throw new ServerException(e);
 		}
 	}
+	
+	@Override
+	public void setTicketConsumerByUser(long ticket, String userId)
+			throws AuthenticationException, InvalidTicketException, UnableToContactServerException, ServerException,
+			ConnectionException, LocalException {
+		String endPoint = this.commitServiceURI + "/" + TICKET + "/consumed";
+		HttpPost method = new HttpPost(endPoint);
+
+		try {
+			MultipartEntity entity = new MultipartEntity();
+			entity.addPart("ticket", new StringBody(Long.toString(ticket), Charset.forName("UTF-8")));
+			entity.addPart("userId", new StringBody(userId, Charset.forName("UTF-8")));
+			method.setEntity(entity);
+			HttpResponse response = httpclient.execute(method);
+			switch (response.getStatusLine().getStatusCode()) {
+			case 200:
+				break;
+//			case 404:
+//				throw new InvalidTicketException(response.getStatusLine().getReasonPhrase());
+			default:
+				throw new ServerException(response.getStatusLine().getReasonPhrase());
+			}
+		} catch (ClientProtocolException e) {
+			throw new ServerException(e);
+		} catch (IOException e) {
+			throw new ServerException(e);
+		}
+	}
+	
 
 	@Override
 	public String getPatch(long ticket) throws AuthenticationException, PatchNotFoundException,

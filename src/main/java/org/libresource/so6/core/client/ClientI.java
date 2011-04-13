@@ -130,4 +130,10 @@ public interface ClientI {
      * @throws Exception
      */
     public String getBinExt() throws AuthenticationException, UnableToContactServerException, ServerException, ConnectionException, LocalException;
+
+	// TODO: write javadoc ;)
+	public void setTicketConsumerByUser(long ticket, String userId)
+		throws AuthenticationException, InvalidTicketException, UnableToContactServerException, ServerException,
+		ConnectionException, LocalException ;
+
 }
