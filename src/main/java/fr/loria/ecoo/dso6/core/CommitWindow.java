@@ -19,7 +19,7 @@ public class CommitWindow extends JFrame {
 
 		lock = new Object();
 
-		JButton button = new JButton("Valider");
+		JButton button = new JButton("Confirm");
 		button.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				synchronized(CommitWindow.this.lock) {

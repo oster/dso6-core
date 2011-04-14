@@ -43,13 +43,20 @@ public class Update {
 				basePath = qpv.getPath();
 				name = qpv.getName();
 			} else {
+				// ask the user for his name
+				AuthorWindow aw =new AuthorWindow();
+					synchronized(aw.lock) {
+					aw.lock.wait();
+				}
+				name = aw.author.getText();
+				
 				// otherwise, ask the user and save queues database
 				JFileChooser jfc = new JFileChooser();
 				jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				while(jfc.showOpenDialog(new JFrame()) != JFileChooser.APPROVE_OPTION);
 				basePath = jfc.getSelectedFile().getAbsolutePath();
 
-				name = "<na:me>";
+				//name = "<na:me>";
 
 				queuesDatabase.put(queueId, new QueuePropertyValue(name, basePath).toString());
 				storeQueuesDatabase(queuesDatabase);

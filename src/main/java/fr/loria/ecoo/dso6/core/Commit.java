@@ -48,7 +48,8 @@ public class Commit {
 			Workspace ws = null;
 			WsConnection wsc = null;
 			InfoWindow iw = null;
-			String commitMessage = "";
+
+			String commitMessage = "";;
 			try {
 				ws = new Workspace(basePath);
 				ws.createConnection(clientProperties, CLIENT_CLASSNAME, name);
@@ -57,7 +58,7 @@ public class Commit {
 				if (wsc.getProperty(BasicClientImpl.DSO6_COMMIT_CAPABILITY) == null) {
 					wsc.setProperty(BasicClientImpl.DSO6_COMMIT_CAPABILITY, this.clientProperties.getProperty(BasicClientImpl.DSO6_COMMIT_CAPABILITY));
 				}
-
+				
 				// ask the user for commit message
 				CommitWindow cw = new CommitWindow();
 				synchronized(cw.lock) {
