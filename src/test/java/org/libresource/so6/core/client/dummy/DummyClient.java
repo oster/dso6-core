@@ -3,11 +3,11 @@
  * Copyright (C) 2004-2008 Artenum SARL / INRIA
  * http://www.libresource.org - contact@artenum.com
  *
- * This file is part of the LibreSource software, 
+ * This file is part of the LibreSource software,
  * which can be used and distributed under license conditions.
- * The license conditions are provided in the LICENSE.TXT file 
- * at the root path of the packaging that enclose this file. 
- * More information can be found at 
+ * The license conditions are provided in the LICENSE.TXT file
+ * at the root path of the packaging that enclose this file.
+ * More information can be found at
  * - http://dev.libresource.org/home/license
  *
  * Initial authors :
@@ -229,6 +229,10 @@ public class DummyClient implements ClientI {
 
         return sb.toString();
     }
+
+	public void setTicketConsumerByUser(long ticket, String userId) {
+		// todo : not implemented yet
+	}
 
     /**
      * Split binary extention into a vector of extention
