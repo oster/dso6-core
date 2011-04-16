@@ -58,7 +58,7 @@ public class Commit {
 				if (wsc.getProperty(BasicClientImpl.DSO6_COMMIT_CAPABILITY) == null) {
 					wsc.setProperty(BasicClientImpl.DSO6_COMMIT_CAPABILITY, this.clientProperties.getProperty(BasicClientImpl.DSO6_COMMIT_CAPABILITY));
 				}
-				
+
 				// ask the user for commit message
 				CommitWindow cw = new CommitWindow();
 				synchronized(cw.lock) {
@@ -69,7 +69,7 @@ public class Commit {
 				iw = new InfoWindow();
 				iw.report.setText("Commit en cours...");
 
-				wsc.commit(commitMessage, iw);
+				wsc.commit(commitMessage, name, iw);
 			} catch (IOException ex) {
 				if(iw == null)
 					iw = new InfoWindow();

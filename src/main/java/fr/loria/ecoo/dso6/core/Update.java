@@ -49,7 +49,7 @@ public class Update {
 					aw.lock.wait();
 				}
 				name = aw.author.getText();
-				
+
 				// otherwise, ask the user and save queues database
 				JFileChooser jfc = new JFileChooser();
 				jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -72,7 +72,7 @@ public class Update {
 			WsConnection wsc = ws.getConnection(null);
 			InfoWindow iw = new InfoWindow();
 			iw.report.setText("Update en cours...");
-			wsc.update(iw);
+			wsc.update(name, iw);
 			System.out.println(wsc.getReport());
 			iw.report.setText("Update terminé.\n" + wsc.getReport());
 			iw.enableClose();

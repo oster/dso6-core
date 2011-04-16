@@ -31,7 +31,7 @@ public class QueuePropertyValue {
 
 		for(int i = 1; i < str.length(); i++)
 			if(str.charAt(i) == ':' && str.charAt(i - 1) != '\\')
-				return new QueuePropertyValue(str.substring(0, i - 2).replaceAll("\\:", ":"), str.substring(i + 1));
+				return new QueuePropertyValue(str.substring(0, i).replaceAll("\\:", ":"), str.substring(i + 1));
 
 		// invalid string
 		return null;

@@ -522,14 +522,13 @@ public class WsConnection implements java.io.Serializable {
 
     /**
      * Commit the local changes with the specified comment.
-     * With JProgressBar
      *
      * @param comment
      *            The comment for that commit
      *
      * @throws Exception
      */
-    public void commit(String comment, InfoWindow iw) throws Exception {
+    public void commit(String comment, String userId, InfoWindow iw) throws Exception {
         // check corruption
         if (isCorrupted()) {
             throw new WorkspaceCorruptedException("The local workspace is corrupted");
@@ -553,16 +552,16 @@ public class WsConnection implements java.io.Serializable {
         OpVectorFsImpl opv = new OpVectorFsImpl(tmp.getPath());
         FileParser fp = new FileParser(this);
         // First step for JProgressBarUnderStep
-        fp.compute(opv, iw);
+        if(iw != null) fp.compute(opv, iw); else fp.compute(opv);
         ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.DETECT_LOCAL_OPERATION);
-        iw.updateProgressBar(25);
+        if(iw != null) iw.updateProgressBar(25);
 
         if (opv.size() == 0) {
             //StateMonitoring.getInstance().setXMLMonitoringComment(false, "No local operation found");
             //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
             //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done");
             ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.COMMIT);
-            iw.updateProgressBar(100);
+            if(iw != null) iw.updateProgressBar(100);
 
             return; // Nothing to commit
         }
@@ -584,22 +583,22 @@ public class WsConnection implements java.io.Serializable {
 
         // Second step for JProgressBarUnderStep
 
-        iw.updateProgressBarUnderStep(25);
+        if(iw != null) iw.updateProgressBarUnderStep(25);
         //
         File f = new File(getDataPath(), SO6_LAST_COMMIT_PATCH_FILE);
-        iw.updateProgressBarUnderStep(35);
+        if(iw != null) iw.updateProgressBarUnderStep(35);
         OutputStreamWriter osw = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(f.getPath())), "UTF-8");
-		iw.updateProgressBarUnderStep(65);
+		if(iw != null) iw.updateProgressBarUnderStep(65);
         PatchFile.makePatch(opv, osw, patchFilter, ticket, lastticket, getWsName(), comment);
-		iw.updateProgressBarUnderStep(95);
+		if(iw != null) iw.updateProgressBarUnderStep(95);
         osw.close();
-        iw.updateProgressBarUnderStep(100);
+        if(iw != null) iw.updateProgressBarUnderStep(100);
 
         //
         //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
         //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
         ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.BUILD_PATCH);
-		iw.updateProgressBar(50);
+		if(iw != null) iw.updateProgressBar(50);
         //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Connecting to the server");
 
         CVSReportMaker reportMaker = new CVSReportMaker(getLocalCmdPath());
@@ -608,12 +607,15 @@ public class WsConnection implements java.io.Serializable {
 
         if (simulationMode) {
             ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.UPLOAD_PATCH);
-            FileUtils.copy(f.getPath(), simulationOutputDir + File.separator + "commit-" + System.currentTimeMillis() + ".xml", iw);
+			if(iw != null)
+			FileUtils.copy(f.getPath(), simulationOutputDir + File.separator + "commit-" + System.currentTimeMillis() + ".xml", iw);
+			else
+			FileUtils.copy(f.getPath(), simulationOutputDir + File.separator + "commit-" + System.currentTimeMillis() + ".xml");
             // third step for JProgressBarUnderStep
             ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.UPLOAD_PATCH);
-			iw.updateProgressBar(75);
+			if(iw != null) iw.updateProgressBar(75);
 
-			iw.updateProgressBarUnderStep(0);
+			if(iw != null) iw.updateProgressBarUnderStep(0);
             //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
             //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
             //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch local reference");
@@ -621,42 +623,42 @@ public class WsConnection implements java.io.Serializable {
             //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
             //StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done");
             //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done (simulation mode)");
-            iw.updateProgressBarUnderStep(100);
+            if(iw != null) iw.updateProgressBarUnderStep(100);
 
             ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.COMMIT);
-            iw.updateProgressBar(100);
+            if(iw != null) iw.updateProgressBar(100);
         } else {
             ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.UPLOAD_PATCH);
             getClient().sendPatch(getNs() + 1, lastticket, f.getPath(), true);
-            iw.updateProgressBarUnderStep(0);
-            iw.updateProgressBarUnderStep(50);
-            iw.updateProgressBarUnderStep(100);
+            if(iw != null) iw.updateProgressBarUnderStep(0);
+            if(iw != null) iw.updateProgressBarUnderStep(50);
+            if(iw != null) iw.updateProgressBarUnderStep(100);
             ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.UPLOAD_PATCH);
-			iw.updateProgressBar(75);
+			if(iw != null) iw.updateProgressBar(75);
             //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
             //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
             ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.PATCH_REFERENCE_COPY);
 
-            iw.updateProgressBarUnderStep(0);
+            if(iw != null) iw.updateProgressBarUnderStep(0);
 
             //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch local reference");
             setCorrupted(COMMIT_CORRUPTION_PATCH_REF_COPY);
             ApplicationStatus.getInstance().criticalPhaseStarted();
             refcopy.patch(f.getPath());
 
-            iw.updateProgressBarUnderStep(20);
+            if(iw != null) iw.updateProgressBarUnderStep(20);
 
 
             setCorrupted(COMMIT_CORRUPTION_SAVE_PATCH);
             ApplicationStatus.getInstance().criticalPhaseStarted();
             appliedPatch.add(f.getPath());
 
-            iw.updateProgressBarUnderStep(40);
+            if(iw != null) iw.updateProgressBarUnderStep(40);
 
             setCorrupted(COMMIT_CORRUPTION_UPDATE_RECEIVED_TICKET);
             ApplicationStatus.getInstance().criticalPhaseStarted();
 
-            iw.updateProgressBarUnderStep(60);
+            if(iw != null) iw.updateProgressBarUnderStep(60);
 
             receivedPatch.setLastTicket(getNs());
 
@@ -666,30 +668,43 @@ public class WsConnection implements java.io.Serializable {
             setCorrupted(COMMIT_CORRUPTION_UPDATE_LOCAL_DBTYPE);
             ApplicationStatus.getInstance().criticalPhaseStarted();
 
-            iw.updateProgressBarUnderStep(80);
+            if(iw != null) iw.updateProgressBarUnderStep(80);
 
             getDBType().updateFromDBType(refcopy.getDBType());
             setCorrupted(NO_CORRUPTION);
 
-            iw.updateProgressBarUnderStep(100);
+            if(iw != null) iw.updateProgressBarUnderStep(100);
 
             ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.PATCH_REFERENCE_COPY);
-			iw.updateProgressBar(95);
+			if(iw != null) iw.updateProgressBar(95);
             //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
             //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
             //StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done");
             //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done");
             ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.COMMIT);
-            iw.updateProgressBar(100);
+            if(iw != null) iw.updateProgressBar(100);
 
-			clienti.setTicketConsumerByUser(getClient().getLastTicket(), "todo");
+			if(userId != null)
+				clienti.setTicketConsumerByUser(getClient().getLastTicket(), userId);
         }
     }
 
 
-/**
+	/**
      * Commit the local changes with the specified comment.
-     * Without JProgressBar
+     *
+     * @param comment
+     *            The comment for that commit
+     *
+     * @throws Exception
+     */
+    public void commit(String comment, String userId) throws Exception {
+		commit(comment, userId, null);
+    }
+
+
+	/**
+     * Commit the local changes with the specified comment.
      *
      * @param comment
      *            The comment for that commit
@@ -697,125 +712,15 @@ public class WsConnection implements java.io.Serializable {
      * @throws Exception
      */
     public void commit(String comment) throws Exception {
-        // check corruption
-        if (isCorrupted()) {
-            throw new WorkspaceCorruptedException("The local workspace is corrupted");
-        }
-
-        report = new StringBuffer();
-        ApplicationStatus.getInstance().actionStarted(ApplicationStatus.Action.COMMIT, 3);
-        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, null);
-
-        //
-        long ticket = this.getNs() + 1;
-        cleanLocalOp();
-
-        File tmp = new File(getLocalCmdPath());
-        tmp.mkdirs();
-
-        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "Compute local operations");
-        ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.DETECT_LOCAL_OPERATION);
-
-        //
-        OpVectorFsImpl opv = new OpVectorFsImpl(tmp.getPath());
-        FileParser fp = new FileParser(this);
-        fp.compute(opv);
-        ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.DETECT_LOCAL_OPERATION);
-
-        if (opv.size() == 0) {
-            //StateMonitoring.getInstance().setXMLMonitoringComment(false, "No local operation found");
-            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done");
-            ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.COMMIT);
-
-            return; // Nothing to commit
-        }
-
-        // check partial for commit
-        long lastticket = -1;
-
-        if (patchFilter == null) {
-            lastticket = (ticket + opv.size()) - 1;
-        } else {
-            // check nb command that need to be sent
-            lastticket = (ticket + computeNbCommandToSend(opv)) - 1;
-        }
-
-        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Building patch file");
-        //StateMonitoring.getInstance().setXMLMonitoringComment(false, "Inserting local command");
-        ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.BUILD_PATCH);
-
-
-        //
-        File f = new File(getDataPath(), SO6_LAST_COMMIT_PATCH_FILE);
-        OutputStreamWriter osw = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(f.getPath())), "UTF-8");
-        PatchFile.makePatch(opv, osw, patchFilter, ticket, lastticket, getWsName(), comment);
-        osw.close();
-
-        //
-        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-        ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.BUILD_PATCH);
-        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Connecting to the server");
-
-        CVSReportMaker reportMaker = new CVSReportMaker(getLocalCmdPath());
-        reportMaker.buildIndexTable();
-        report.append(reportMaker.getReport());
-
-        if (simulationMode) {
-            ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.UPLOAD_PATCH);
-            FileUtils.copy(f.getPath(), simulationOutputDir + File.separator + "commit-" + System.currentTimeMillis() + ".xml");
-            ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.UPLOAD_PATCH);
-            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-            //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch local reference");
-            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            //StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done");
-            //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done (simulation mode)");
-            ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.COMMIT);
-        } else {
-            ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.UPLOAD_PATCH);
-            getClient().sendPatch(getNs() + 1, lastticket, f.getPath(), true);
-            ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.UPLOAD_PATCH);
-            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-            ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.PATCH_REFERENCE_COPY);
-            //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Patch local reference");
-            setCorrupted(COMMIT_CORRUPTION_PATCH_REF_COPY);
-            ApplicationStatus.getInstance().criticalPhaseStarted();
-            refcopy.patch(f.getPath());
-            setCorrupted(COMMIT_CORRUPTION_SAVE_PATCH);
-            ApplicationStatus.getInstance().criticalPhaseStarted();
-            appliedPatch.add(f.getPath());
-            setCorrupted(COMMIT_CORRUPTION_UPDATE_RECEIVED_TICKET);
-            ApplicationStatus.getInstance().criticalPhaseStarted();
-            receivedPatch.setLastTicket(getNs());
-
-            // update local db type
-            setCorrupted(COMMIT_CORRUPTION_UPDATE_LOCAL_DBTYPE);
-            ApplicationStatus.getInstance().criticalPhaseStarted();
-            getDBType().updateFromDBType(refcopy.getDBType());
-            setCorrupted(NO_CORRUPTION);
-            ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.PATCH_REFERENCE_COPY);
-            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            //StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done");
-            //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Commit process done");
-            ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.COMMIT);
-
-			clienti.setTicketConsumerByUser(getClient().getLastTicket(), "todo");
-        }
+		commit(comment, null, null);
     }
 
 	/**
      * Update the local workspace in order to integrate the concurrent change.
-     *With JProgressBar
      *
      * @throws Exception
      */
-    public void update(InfoWindow iw) throws Exception {
+    public void update(String userId, InfoWindow iw) throws Exception {
         // check corruption
         if (isCorrupted()) {
             throw new WorkspaceCorruptedException("The local workspace is corrupted");
@@ -835,22 +740,22 @@ public class WsConnection implements java.io.Serializable {
 
         //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
         ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.DOWNLOAD_PATCHES);
-        iw.updateProgressBar(50);
+        if(iw != null) iw.updateProgressBar(50);
 
         File[] patches = receivedPatch.list();
         //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(patches.length, "Updating...");
         //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Merging");
         ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.MERGE);
-        iw.updateProgressBarUnderStep(0);
+        if(iw != null) iw.updateProgressBarUnderStep(0);
         for (int i = 0; i < patches.length; i++) {
             //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
             this.update(patches[i].getPath());
             //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-            iw.updateProgressBarUnderStep(i*5);
+            if(iw != null) iw.updateProgressBarUnderStep(i*5);
         }
-        iw.updateProgressBarUnderStep(100);
+        if(iw != null) iw.updateProgressBarUnderStep(100);
         ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.MERGE);
-        iw.updateProgressBar(95);
+        if(iw != null) iw.updateProgressBar(95);
 
         //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
         //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
@@ -858,55 +763,19 @@ public class WsConnection implements java.io.Serializable {
         //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Update process done");
         getDBType().updateFromDBType(refcopy.getDBType());
         ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.UPDATE);
-        iw.updateProgressBar(100);
+        if(iw != null) iw.updateProgressBar(100);
 
-		clienti.setTicketConsumerByUser(getClient().getLastTicket(), "todo");
+		if(userId != null)
+			clienti.setTicketConsumerByUser(getClient().getLastTicket(), userId);
     }
-
 
     /**
      * Update the local workspace in order to integrate the concurrent change.
-     * Without JProgressBar
      *
      * @throws Exception
      */
     public void update() throws Exception {
-        // check corruption
-        if (isCorrupted()) {
-            throw new WorkspaceCorruptedException("The local workspace is corrupted");
-        }
-
-        report = new StringBuffer();
-        needToCheckLocalOp = true;
-        ApplicationStatus.getInstance().actionStarted(ApplicationStatus.Action.UPDATE, 2);
-        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(4, "");
-        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Start the update process");
-        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Download all patch");
-        ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.DOWNLOAD_PATCHES);
-        receive();
-        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.DOWNLOAD_PATCHES);
-
-        File[] patches = receivedPatch.list();
-        //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(patches.length, "Updating...");
-        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Merging");
-        ApplicationStatus.getInstance().taskStarted(ApplicationStatus.Task.MERGE);
-        for (int i = 0; i < patches.length; i++) {
-            //StateMonitoring.getInstance().setXMLMonitoringStartSubCall(1, "");
-            this.update(patches[i].getPath());
-            //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        }
-        ApplicationStatus.getInstance().taskTerminated(ApplicationStatus.Task.MERGE);
-
-        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        //StateMonitoring.getInstance().setXMLMonitoringEndSubCall();
-        //StateMonitoring.getInstance().setXMLMonitoringComment(false, "Done update");
-        //StateMonitoring.getInstance().setXMLMonitoringComment(true, "Update process done");
-        getDBType().updateFromDBType(refcopy.getDBType());
-        ApplicationStatus.getInstance().actionTerminated(ApplicationStatus.Action.UPDATE);
-
-		clienti.setTicketConsumerByUser(getClient().getLastTicket(), "truc");
+		update(null, null);
     }
 
     private void update(String patchfile) throws Exception {
@@ -1004,13 +873,13 @@ public class WsConnection implements java.io.Serializable {
      * @throws Exception
      */
     public void receive(InfoWindow iw) throws Exception {
-		iw.updateProgressBarUnderStep(0);
+		if(iw != null) iw.updateProgressBarUnderStep(0);
 
         // check corruption
         if (isCorrupted()) {
             throw new WorkspaceCorruptedException("The local workspace is corrupted");
         }
-		iw.updateProgressBarUnderStep(10);
+		if(iw != null) iw.updateProgressBarUnderStep(10);
 		int progress =20;
         int nbPatchToDownload = 0;
         int currentPatchNumber = 1;
@@ -1021,10 +890,10 @@ public class WsConnection implements java.io.Serializable {
                 nbPatchToDownload++;
             }
             progress++;
-            iw.updateProgressBarUnderStep(progress);
+            if(iw != null) iw.updateProgressBarUnderStep(progress);
         }
 
-		iw.updateProgressBarUnderStep(70);
+		if(iw != null) iw.updateProgressBarUnderStep(70);
         while (getClient().getLastTicket() > receivedPatch.getLastTicket()) {
             //StateMonitoring.getInstance().setXMLMonitoringState(0, nbPatchToDownload, currentPatchNumber,
             //    "Downloading patch " + currentPatchNumber + " / " + nbPatchToDownload);
@@ -1034,33 +903,11 @@ public class WsConnection implements java.io.Serializable {
             String fname = getClient().getPatch(receivedPatch.getLastTicket() + 1);
             receivedPatch.add(fname);
         }
-        iw.updateProgressBarUnderStep(100);
+        if(iw != null) iw.updateProgressBarUnderStep(100);
     }
 
  public void receive() throws Exception {
-        // check corruption
-        if (isCorrupted()) {
-            throw new WorkspaceCorruptedException("The local workspace is corrupted");
-        };
-        int nbPatchToDownload = 0;
-        int currentPatchNumber = 1;
-        long[][] patchList = getClient().listPatch();
-
-        for (int i = 0; i < patchList.length; i++) {
-            if (patchList[i][0] > receivedPatch.getLastTicket()) {
-                nbPatchToDownload++;
-            };
-        }
-
-        while (getClient().getLastTicket() > receivedPatch.getLastTicket()) {
-            //StateMonitoring.getInstance().setXMLMonitoringState(0, nbPatchToDownload, currentPatchNumber,
-            //    "Downloading patch " + currentPatchNumber + " / " + nbPatchToDownload);
-            ApplicationStatus.getInstance().taskOnProgress(0, nbPatchToDownload, currentPatchNumber);
-            currentPatchNumber++;
-
-            String fname = getClient().getPatch(receivedPatch.getLastTicket() + 1);
-            receivedPatch.add(fname);
-        }
+		receive(null);
     }
 
     private void setCorrupted(int b) {
