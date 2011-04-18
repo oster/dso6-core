@@ -13,7 +13,7 @@ public class InfoWindow extends JFrame {
 	protected JProgressBar progressUnderStep;
 
 	public InfoWindow() {
-		setTitle("DSo6 - Update");
+		setTitle("DSo6");
 		setPreferredSize(new Dimension(600, 400));
 		setLayout(new BorderLayout(1, 1));
 

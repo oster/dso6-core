@@ -22,12 +22,21 @@ public class Update {
 
 	private Properties clientProperties;
 
+	private boolean forceCheckout;
+
 	public Update(String endpointURI, String queueId, String capabilityId) {
 		this.clientProperties = new Properties();
 		this.clientProperties.put(BasicClientImpl.DSO6_ENDPOINT_URI, endpointURI);
 		this.clientProperties.put(ClientI.SO6_QUEUE_ID, queueId);
 		this.clientProperties.put(BasicClientImpl.DSO6_UPDATE_CAPABILITY, capabilityId);
 		this.clientProperties.put(ClientI.SO6_XML_DETECT, "false");
+
+		this.forceCheckout = false;
+	}
+
+	public Update(String endpointURI, String queueId, String capabilityId, boolean forceCheckout) {
+		this(endpointURI, queueId, capabilityId);
+		this.forceCheckout = forceCheckout;
 	}
 
 	public void perform() {
@@ -40,30 +49,50 @@ public class Update {
 			String basePath = "", name = "";
 			Properties queuesDatabase = loadQueuesDatabase();
 			String queueId = this.clientProperties.getProperty(ClientI.SO6_QUEUE_ID);
-			CheckoutWindow aw = null;
+			CheckoutWindow cw = null;
+			QPVArray qpva = new QPVArray();
 
 			if(queuesDatabase.containsKey(queueId)) {
 				// if queue contained in queues database
-				QueuePropertyValue qpv = QueuePropertyValue.fromString(queuesDatabase.getProperty(queueId));
+				qpva = QPVArray.fromString(queuesDatabase.getProperty(queueId));
 
-				basePath = qpv.getPath();
-				name = qpv.getName();
-			} else {
-				// otherwise, ask the user and save queues database
-				aw = new CheckoutWindow();
-					synchronized(aw.lock) {
-					aw.lock.wait();
+				if(qpva.size() == 0) {
+					// should never happen
+				} else if(!this.forceCheckout) {
+					QueuePropertyValue qpv;
+
+					if(qpva.size() == 1) {
+						qpv = qpva.get(0);
+					} else {
+						// ask user which workspace to choose
+						SelectWorkspaceWindow sww = new SelectWorkspaceWindow(qpva.toStringArray());
+						synchronized(sww.lock) {
+							sww.lock.wait();
+						}
+						qpv = qpva.get(sww.workspaces.getSelectedIndex());
+					}
+					basePath = qpv.getPath();
+					name = qpv.getName();
 				}
-				if(aw.flag) {
-					name = aw.author.getText();
-					basePath = aw.path.getText();
+			}
+			if(basePath.equals("") && name.equals("")) {
+				// otherwise, ask the user and save queues database
+				cw = new CheckoutWindow();
+				synchronized(cw.lock) {
+					cw.lock.wait();
+				}
+				if(cw.flag) {
+					name = cw.author.getText();
+					basePath = cw.path.getText();
 
-					queuesDatabase.put(queueId, new QueuePropertyValue(name, basePath).toString());
+					qpva.add(new QueuePropertyValue(name, basePath));
+
+					queuesDatabase.put(queueId, qpva.toString());
 					storeQueuesDatabase(queuesDatabase);
 				}
 			}
 
-			if(aw == null || aw.flag) {
+			if(cw == null || cw.flag) {
 				Workspace ws = null;
 				try {
 					ws = new Workspace(basePath);
@@ -74,6 +103,7 @@ public class Update {
 				WsConnection wsc = ws.getConnection(null);
 				InfoWindow iw = new InfoWindow();
 				iw.report.setText("Update in progress...");
+				iw.setTitle("DSo6 - Updating to " + basePath);
 				wsc.update(name, iw);
 				System.out.println(wsc.getReport());
 				iw.report.setText("Update done.\n" + wsc.getReport());
@@ -131,5 +161,4 @@ public class Update {
 		//Update action = new Update(testEndPointURI, testQueueId, testUpdateCapabilityId);
 		action.perform();
 	}
-
 }

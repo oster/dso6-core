@@ -13,9 +13,13 @@ public class CommitWindow extends JFrame {
 		setPreferredSize(new Dimension(600, 400));
 		setLayout(new BorderLayout(1, 1));
 
+		JPanel centerPanel = new JPanel(new BorderLayout(1, 1));
+		centerPanel.setBorder(BorderFactory.createTitledBorder("Commit Message"));
+		add(centerPanel, BorderLayout.CENTER);
+
 		message = new JTextArea();
 		message.setLineWrap(true);
-		add(new JScrollPane(message), BorderLayout.CENTER);
+		centerPanel.add(new JScrollPane(message), BorderLayout.CENTER);
 
 		lock = new Object();
 

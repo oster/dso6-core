@@ -36,17 +36,33 @@ public class Commit {
 		}
 
 		try {
-			String basePath, name;
+			String basePath = null, name = null;
 			Properties queuesDatabase = loadQueuesDatabase();
 			String queueId = this.clientProperties.getProperty(ClientI.SO6_QUEUE_ID);
 
-			if (queuesDatabase.containsKey(queueId)) {
+			if(queuesDatabase.containsKey(queueId)) {
 				// if queue contained in queues database
-				QueuePropertyValue qpv = QueuePropertyValue.fromString(queuesDatabase.getProperty(queueId));
+				QPVArray qpva = QPVArray.fromString(queuesDatabase.getProperty(queueId));
+				QueuePropertyValue qpv;
 
-				basePath = qpv.getPath();
-				name = qpv.getName();
-			} else {
+				if(qpva.size() == 0) {
+					// should never happen
+				} else {
+					if(qpva.size() == 1) {
+						qpv = qpva.get(0);
+					} else {
+						// ask user which workspace to choose
+						SelectWorkspaceWindow sww = new SelectWorkspaceWindow(qpva.toStringArray());
+						synchronized(sww.lock) {
+							sww.lock.wait();
+						}
+						qpv = qpva.get(sww.workspaces.getSelectedIndex());
+					}
+					basePath = qpv.getPath();
+					name = qpv.getName();
+				}
+			}
+			if(basePath == null && name == null) {
 				// otherwise
 				throw new NotYetCheckedOutException();
 			}
@@ -55,7 +71,7 @@ public class Commit {
 			WsConnection wsc = null;
 			InfoWindow iw = null;
 
-			String commitMessage = "";;
+			String commitMessage = "";
 			try {
 				ws = new Workspace(basePath);
 				ws.createConnection(clientProperties, CLIENT_CLASSNAME, name);
@@ -74,11 +90,13 @@ public class Commit {
 
 				iw = new InfoWindow();
 				iw.report.setText("Commit in progress...");
+				iw.setTitle("DSo6 - Committing from " + basePath);
 
 				wsc.commit(commitMessage, name, iw);
 			} catch (IOException ex) {
 				if(iw == null)
 					iw = new InfoWindow();
+				iw.setTitle("DSo6 - Committing from " + basePath);
 				iw.report.setText("Error.\n" + wsc.getReport());
 				throw new NotYetCheckedOutException(ex);
 			}

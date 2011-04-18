@@ -19,7 +19,7 @@ public class QueuePropertyValue {
 	 *
 	 */
 	public String toString() {
-		return name.replaceAll(":", "\\\\:") + ":" + path;
+		return name.replaceAll("~", "\\\\~") + "~" + path;
 	}
 
 	/**
@@ -30,8 +30,8 @@ public class QueuePropertyValue {
 			return null;
 
 		for(int i = 1; i < str.length(); i++)
-			if(str.charAt(i) == ':' && str.charAt(i - 1) != '\\')
-				return new QueuePropertyValue(str.substring(0, i).replaceAll("\\:", ":"), str.substring(i + 1));
+			if(str.charAt(i) == '~' && str.charAt(i - 1) != '\\')
+				return new QueuePropertyValue(str.substring(0, i).replaceAll("\\\\~", "~"), str.substring(i + 1));
 
 		// invalid string
 		return null;
