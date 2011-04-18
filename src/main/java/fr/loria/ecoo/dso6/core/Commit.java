@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import javax.swing.UIManager;
 
 import org.libresource.so6.core.Workspace;
 import org.libresource.so6.core.WsConnection;
@@ -29,6 +30,11 @@ public class Commit {
 
 
 	public void perform() {
+		try {
+			UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
+		} catch(Throwable t) {
+		}
+
 		try {
 			String basePath, name;
 			Properties queuesDatabase = loadQueuesDatabase();
@@ -67,17 +73,17 @@ public class Commit {
 				commitMessage = cw.message.getText();
 
 				iw = new InfoWindow();
-				iw.report.setText("Commit en cours...");
+				iw.report.setText("Commit in progress...");
 
 				wsc.commit(commitMessage, name, iw);
 			} catch (IOException ex) {
 				if(iw == null)
 					iw = new InfoWindow();
-				iw.report.setText("Erreur de commit.\n" + wsc.getReport());
+				iw.report.setText("Error.\n" + wsc.getReport());
 				throw new NotYetCheckedOutException(ex);
 			}
 			System.out.println(wsc.getReport());
-			iw.report.setText("Commit terminé.\n\n" + commitMessage + "\n" + wsc.getReport());
+			iw.report.setText("Commit done.\n\n" + commitMessage + "\n" + wsc.getReport());
 			iw.enableClose();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

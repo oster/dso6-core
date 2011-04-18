@@ -32,50 +32,53 @@ public class Update {
 
 	public void perform() {
 		try {
+			UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
+		} catch(Throwable t) {
+		}
+
+		try {
 			String basePath = "", name = "";
 			Properties queuesDatabase = loadQueuesDatabase();
 			String queueId = this.clientProperties.getProperty(ClientI.SO6_QUEUE_ID);
+			CheckoutWindow aw = null;
 
-			if (queuesDatabase.containsKey(queueId)) {
+			if(queuesDatabase.containsKey(queueId)) {
 				// if queue contained in queues database
 				QueuePropertyValue qpv = QueuePropertyValue.fromString(queuesDatabase.getProperty(queueId));
 
 				basePath = qpv.getPath();
 				name = qpv.getName();
 			} else {
-				// ask the user for his name
-				AuthorWindow aw =new AuthorWindow();
+				// otherwise, ask the user and save queues database
+				aw = new CheckoutWindow();
 					synchronized(aw.lock) {
 					aw.lock.wait();
 				}
-				name = aw.author.getText();
+				if(aw.flag) {
+					name = aw.author.getText();
+					basePath = aw.path.getText();
 
-				// otherwise, ask the user and save queues database
-				JFileChooser jfc = new JFileChooser();
-				jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-				while(jfc.showOpenDialog(new JFrame()) != JFileChooser.APPROVE_OPTION);
-				basePath = jfc.getSelectedFile().getAbsolutePath();
-
-				//name = "<na:me>";
-
-				queuesDatabase.put(queueId, new QueuePropertyValue(name, basePath).toString());
-				storeQueuesDatabase(queuesDatabase);
+					queuesDatabase.put(queueId, new QueuePropertyValue(name, basePath).toString());
+					storeQueuesDatabase(queuesDatabase);
+				}
 			}
 
-			Workspace ws = null;
-			try {
-				ws = new Workspace(basePath);
-			} catch (IOException ex) {
-				ws = Workspace.createWorkspace(basePath);
-				ws.createConnection(clientProperties, CLIENT_CLASSNAME, name);
+			if(aw == null || aw.flag) {
+				Workspace ws = null;
+				try {
+					ws = new Workspace(basePath);
+				} catch (IOException ex) {
+					ws = Workspace.createWorkspace(basePath);
+					ws.createConnection(clientProperties, CLIENT_CLASSNAME, name);
+				}
+				WsConnection wsc = ws.getConnection(null);
+				InfoWindow iw = new InfoWindow();
+				iw.report.setText("Update in progress...");
+				wsc.update(name, iw);
+				System.out.println(wsc.getReport());
+				iw.report.setText("Update done.\n" + wsc.getReport());
+				iw.enableClose();
 			}
-			WsConnection wsc = ws.getConnection(null);
-			InfoWindow iw = new InfoWindow();
-			iw.report.setText("Update en cours...");
-			wsc.update(name, iw);
-			System.out.println(wsc.getReport());
-			iw.report.setText("Update terminé.\n" + wsc.getReport());
-			iw.enableClose();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
