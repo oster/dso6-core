@@ -3,10 +3,12 @@ package fr.loria.ecoo.dso6.core;
 import java.util.List;
 import java.util.ArrayList;
 
+import org.libresource.so6.core.engine.util.Base64;
+
 /**
  *
  */
-public class QPVArray {
+public class QPVArray implements java.io.Serializable {
 	private ArrayList<QueuePropertyValue> ary = new ArrayList<QueuePropertyValue>();
 
 	/**
@@ -19,13 +21,7 @@ public class QPVArray {
 	 *
 	 */
 	public String toString() {
-		String str = "";
-
-		for(QueuePropertyValue v : ary) {
-			str = str + v.toString().replaceAll("@", "\\\\@") + "@";
-		}
-
-		return str.substring(0, str.length() - 1);
+		return Base64.encodeObject(this);
 	}
 
 	/**
@@ -35,17 +31,7 @@ public class QPVArray {
 		if(str == null)
 			return null;
 
-		QPVArray ary = new QPVArray();
-
-		int last_i = 0;
-		for(int i = 1; i < str.length(); i++) {
-			if((str.charAt(i) == '@' && str.charAt(i - 1) != '\\') || i == str.length() - 1) {
-				ary.add(QueuePropertyValue.fromString(str.substring(last_i, i + ((i == str.length() - 1) ? 1 : 0)).replaceAll("\\\\@", "@")));
-				last_i = i + 1;
-			}
-		}
-
-		return ary;
+		return (QPVArray)Base64.decodeToObject(str);
 	}
 
 	/**
@@ -77,7 +63,7 @@ public class QPVArray {
 		String str[] = new String[ary.size()];
 
 		for(int i = 0; i < ary.size(); ++i) {
-			str[i] = ary.get(i).toString();
+			str[i] = ary.get(i).getPath() + " " + "[" + ary.get(i).getName() + "]";
 		}
 
 		return str;

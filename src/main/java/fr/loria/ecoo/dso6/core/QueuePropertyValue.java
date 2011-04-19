@@ -1,9 +1,11 @@
 package fr.loria.ecoo.dso6.core;
 
+import org.libresource.so6.core.engine.util.Base64;
+
 /**
  *
  */
-public class QueuePropertyValue {
+public class QueuePropertyValue implements java.io.Serializable {
 	private String name;
 	private String path;
 
@@ -19,7 +21,7 @@ public class QueuePropertyValue {
 	 *
 	 */
 	public String toString() {
-		return name.replaceAll("~", "\\\\~") + "~" + path;
+		return Base64.encodeObject(this);
 	}
 
 	/**
@@ -29,12 +31,7 @@ public class QueuePropertyValue {
 		if(str == null)
 			return null;
 
-		for(int i = 1; i < str.length(); i++)
-			if(str.charAt(i) == '~' && str.charAt(i - 1) != '\\')
-				return new QueuePropertyValue(str.substring(0, i).replaceAll("\\\\~", "~"), str.substring(i + 1));
-
-		// invalid string
-		return null;
+		return (QueuePropertyValue)Base64.decodeToObject(str);
 	}
 
 	/**
